@@ -1,0 +1,95 @@
+openapi: 3.0.3
+info:
+  title: Asset Management API
+  version: 1.0.0
+  description: API for managing assets
+paths:
+  /api/predictions/:
+    get:
+      operationId: predictions_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - predictions
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prediction'
+          description: ''
+  /api/predictions/predict/:
+    post:
+      operationId: predictions_predict_create
+      tags:
+      - predictions
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    Prediction:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        original_image:
+          type: string
+          format: uri
+        predicted_image:
+          type: string
+          format: uri
+          readOnly: true
+        detected_objects:
+          readOnly: true
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - detected_objects
+      - id
+      - original_image
+      - predicted_image
+      - status
+    StatusEnum:
+      enum:
+      - PENDING
+      - CORRECT
+      - INCORRECT
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `CORRECT` - Correct
+        * `INCORRECT` - Incorrect
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
