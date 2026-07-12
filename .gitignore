@@ -4,3 +4,10 @@ env
 assetmanagement/media
 assetmanagement/best.pt
 docs
+
+
+# Ignore Python compiled bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

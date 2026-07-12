@@ -1,0 +1,83 @@
+version: "3"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    restart: always
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - TZ=${TZ}
+    volumes:
+      - postgres-data-dev:/var/lib/postgresql/data
+
+  django:
+    build: .
+    image: assetmanagement_backend-django
+    restart: always
+    command: >
+      sh -c "
+      if [ \"$$DEBUG\" = \"true\" ] || [ \"$$DEBUG\" = \"1\" ]; then
+        echo 'Running server in debug (Autoreload) mode...';
+        exec python manage.py runserver 0.0.0.0:${HTTP_PORT};
+      else
+        echo 'Running server in production mode...';
+        exec gunicorn assetmanagement.wsgi:application -b unix:/tmp/gunicorn.sock -w ${GUNICORN_WORKERS};
+      fi
+      "
+    environment:
+      - DB_HOST=postgres
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_PORT=${DB_PORT}
+      - TZ=${TZ}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
+      - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME}
+      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
+      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL}
+      - DEPLOYMENT=${DEPLOYMENT}
+      - DEBUG=${DEBUG}
+    volumes:
+      - ./assetmanagement:/app
+      - gunicorn-socket:/tmp
+    depends_on:
+      - postgres
+
+  nginx:
+    image: nginx:stable-alpine3.20
+    restart: always
+    environment:
+      - HTTP_PORT=${HTTP_PORT}
+      - DEBUG=${DEBUG}
+      - TZ=${TZ}
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/default.conf:/etc/nginx/templates/default.conf.template
+      - ./assetmanagement/static:/usr/share/nginx/html/static
+      - ./assetmanagement/media:/usr/share/nginx/html/media
+      - gunicorn-socket:/tmp
+    ports:
+      - 127.0.0.1:${HTTP_PORT}:80
+    depends_on:
+      - django
+
+  pgadmin:
+    image: dpage/pgadmin4:9.11
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: "True"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - "127.0.0.1:${PGADMIN_HTTP_PORT}:80"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres-data-dev:
+  gunicorn-socket:
+  pgadmin_data:

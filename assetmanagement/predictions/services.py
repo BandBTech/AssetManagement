@@ -12,7 +12,7 @@ def _get_model():
     if model is None:
         from ultralytics import YOLO
 
-        model = YOLO("best.pt")
+        model = YOLO("model/pipes_best.pt")
     return model
 
 

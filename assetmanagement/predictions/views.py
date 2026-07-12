@@ -36,6 +36,7 @@ class PredictAPIView(APIView):
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
+            print(str(e))
             return Response(
                 {"error": "An error occurred during prediction. " + str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -60,4 +61,24 @@ class PredictionRetrieveView(RetrieveAPIView):
 
 
 class PredictionFeedback(UpdateAPIView):
-    pass
+    serializer_class = PredictionSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return Prediction.objects.filter(id=self.kwargs["pk"])
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        feedback_status = request.data.get("status")
+
+        if feedback_status not in ["correct", "incorrect"]:
+            return Response(
+                {"error": "Feedback must be 'correct' or 'incorrect'"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        instance.status = feedback_status
+        instance.save()
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)

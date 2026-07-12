@@ -1,0 +1,13 @@
+media/*
+media/
+**/media/**
+
+__pycache__/
+*.pyc
+*.pyo
+
+env/
+venv/
+
+.git/
+*.log
