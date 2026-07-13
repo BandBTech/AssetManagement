@@ -4,43 +4,19 @@ from rest_framework import status
 from rest_framework.generics import ListAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Prediction
-from .serializers import PredictionSerializer
-from .services import run_yolo_and_annotate
+from .serializers import PredictionSerializer, PredictionFeedbackSerializer
 
 
 class PredictAPIView(APIView):
-    permission_classes = [AllowAny]  # change to IsAuthenticated when auth ready
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        image = request.FILES.get("image")
-        if not image:
-            return Response(
-                {"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        try:
-            # plot the annotation on the image
-            predicted_image, detected_objects = run_yolo_and_annotate(image)
-
-            # save the prediction to the database
-            prediction = Prediction.objects.create(
-                original_image=image,
-                predicted_image=predicted_image,
-                detected_objects=detected_objects,
-                status="PENDING",
-            )
-
-            serializer = PredictionSerializer(prediction, context={"request": request})
-
+        serializer = PredictionSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            print(str(e))
-            return Response(
-                {"error": "An error occurred during prediction. " + str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class PredictionListView(ListAPIView):
@@ -48,7 +24,6 @@ class PredictionListView(ListAPIView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        # when auth ready, swap to: return Prediction.objects.filter(user=self.request.user)
         return Prediction.objects.all().order_by("-created_at")
 
 
@@ -61,24 +36,8 @@ class PredictionRetrieveView(RetrieveAPIView):
 
 
 class PredictionFeedback(UpdateAPIView):
-    serializer_class = PredictionSerializer
+    serializer_class = PredictionFeedbackSerializer
     permission_classes = [AllowAny]
 
     def get_queryset(self):
         return Prediction.objects.filter(id=self.kwargs["pk"])
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        feedback_status = request.data.get("status")
-
-        if feedback_status not in ["correct", "incorrect"]:
-            return Response(
-                {"error": "Feedback must be 'correct' or 'incorrect'"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        instance.status = feedback_status
-        instance.save()
-
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
