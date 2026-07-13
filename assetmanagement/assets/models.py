@@ -8,7 +8,7 @@ class Status(models.TextChoices):
     INCORRECT = "INCORRECT", _("Incorrect")
 
 
-class Prediction(models.Model):
+class Asset(models.Model):
     original_image = models.ImageField(upload_to="uploads/originals/")
     predicted_image = models.ImageField(
         upload_to="uploads/predicted/", blank=True, null=True

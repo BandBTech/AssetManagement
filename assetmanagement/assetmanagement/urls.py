@@ -14,7 +14,7 @@ urlpatterns = [
     path("", lambda request: HttpResponse("Hello, World!")),
     path("admin/", admin.site.urls),
     path("api/auth/", include("authentication.urls")),
-    path("api/predictions/", include("predictions.urls")),
+    path("api/assets/", include("assets.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
         "api/schema/swagger-ui/",

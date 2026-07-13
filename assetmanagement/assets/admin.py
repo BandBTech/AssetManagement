@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import Prediction
+from .models import Asset
 from django.utils.html import format_html
 
 
-@admin.register(Prediction)
-class PredictionAdmin(admin.ModelAdmin):
+@admin.register(Asset)
+class AssetAdmin(admin.ModelAdmin):
     list_display = ("id", "status", "predicted_image_preview", "created_at")
     list_filter = ("status", "created_at")
     search_fields = ("id",)

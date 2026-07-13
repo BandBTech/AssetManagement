@@ -1,15 +1,14 @@
 from rest_framework import serializers
-from .models import Prediction
+from .models import Asset
 from .services import run_yolo_and_annotate
 
 
-class PredictionSerializer(serializers.ModelSerializer):
+class AssetSerializer(serializers.ModelSerializer):
     original_image = serializers.ImageField(required=False)
     predicted_image = serializers.ImageField(read_only=True)
 
-
     class Meta:
-        model = Prediction
+        model = Asset
         fields = [
             "id",
             "original_image",
@@ -24,7 +23,6 @@ class PredictionSerializer(serializers.ModelSerializer):
             "status",
             "created_at",
         ]
-
 
     def validate(self, attrs):
         image = self.initial_data.get("image")
@@ -53,12 +51,11 @@ class PredictionSerializer(serializers.ModelSerializer):
         
         return super().create(validated_data)
 
-
-class PredictionFeedbackSerializer(serializers.ModelSerializer):
+class AssetFeedbackSerializer(serializers.ModelSerializer):
     status = serializers.CharField()
 
     class Meta:
-        model = Prediction
+        model = Asset
         fields = [
             "id",
             "original_image",

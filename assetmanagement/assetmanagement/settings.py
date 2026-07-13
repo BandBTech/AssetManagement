@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     "corsheaders",
     ##
     "authentication",
-    "predictions",
+    "assets",
 ]
 
 AUTH_USER_MODEL = "authentication.User"
