@@ -5,10 +5,10 @@ services:
     image: pgvector/pgvector:pg15
     restart: always
     environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASS}
-      - TZ=${TZ}
+      - POSTGRES_DB=${DB_NAME:-assetmanagement_db}
+      - POSTGRES_USER=${DB_USER:-postgres}
+      - POSTGRES_PASSWORD=${DB_PASS:-postgres}
+      - TZ=${TZ:-UTC}
     volumes:
       - postgres-data-dev:/var/lib/postgresql/data
 
@@ -20,25 +20,27 @@ services:
       sh -c "
       if [ \"$$DEBUG\" = \"true\" ] || [ \"$$DEBUG\" = \"1\" ]; then
         echo 'Running server in debug (Autoreload) mode...';
-        exec python manage.py runserver 0.0.0.0:${HTTP_PORT};
+        exec python manage.py runserver 0.0.0.0:${HTTP_PORT:-8000};
       else
         echo 'Running server in production mode...';
-        exec gunicorn assetmanagement.wsgi:application -b unix:/tmp/gunicorn.sock -w ${GUNICORN_WORKERS};
+        exec gunicorn assetmanagement.wsgi:application -b unix:/tmp/gunicorn.sock -w ${GUNICORN_WORKERS:-3};
       fi
       "
     environment:
       - DB_HOST=postgres
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASS=${DB_PASS}
-      - DB_PORT=${DB_PORT}
-      - TZ=${TZ}
-      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE}
-      - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME}
-      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
-      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL}
-      - DEPLOYMENT=${DEPLOYMENT}
-      - DEBUG=${DEBUG}
+      - DB_ENGINE=${DB_ENGINE:-django.db.backends.postgresql}
+      - DB_NAME=${DB_NAME:-assetmanagement_db}
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASS=${DB_PASS:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - TZ=${TZ:-UTC}
+      - DJANGO_SETTINGS_MODULE=${DJANGO_SETTINGS_MODULE:-assetmanagement.local_settings}
+      - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME:-admin}
+      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD:-admin123}
+      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL:-admin@example.com}
+      - DEPLOYMENT=${DEPLOYMENT:-development}
+      - DEBUG=${DEBUG:-1}
+      - HTTP_PORT=${HTTP_PORT:-8000}
     volumes:
       - ./assetmanagement:/app
       - gunicorn-socket:/tmp
@@ -49,9 +51,9 @@ services:
     image: nginx:stable-alpine3.20
     restart: always
     environment:
-      - HTTP_PORT=${HTTP_PORT}
-      - DEBUG=${DEBUG}
-      - TZ=${TZ}
+      - HTTP_PORT=${HTTP_PORT:-8000}
+      - DEBUG=${DEBUG:-1}
+      - TZ=${TZ:-UTC}
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/default.conf:/etc/nginx/templates/default.conf.template
@@ -59,7 +61,7 @@ services:
       - ./assetmanagement/media:/usr/share/nginx/html/media
       - gunicorn-socket:/tmp
     ports:
-      - 127.0.0.1:${HTTP_PORT}:80
+      - "127.0.0.1:${HTTP_PORT:-8000}:80"
     depends_on:
       - django
 
@@ -67,13 +69,13 @@ services:
     image: dpage/pgadmin4:9.11
     restart: unless-stopped
     environment:
-      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
-      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-root}
       PGADMIN_CONFIG_SERVER_MODE: "True"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     ports:
-      - "127.0.0.1:${PGADMIN_HTTP_PORT}:80"
+      - "127.0.0.1:${PGADMIN_HTTP_PORT:-5050}:80"
     depends_on:
       - postgres
 

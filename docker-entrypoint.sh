@@ -1,9 +1,10 @@
 #!/bin/bash
+set -e
 
 echo "Executing docker-entrypoint.sh..."
 
 # Check if the necessary setup has been done
-if [ ! -f "~/.initialized" ]; then
+if [ ! -f "$HOME/.initialized" ]; then
 
   echo "Initializing the application..."
 
@@ -25,14 +26,16 @@ if [ ! -f "~/.initialized" ]; then
 
   # Run other management commands or setup tasks as needed
   echo "Creating permission groups..."
-  python manage.py create_permission_groups
+  # Only run if command exists or is properly configured
+  python manage.py create_permission_groups || echo "Skipping create_permission_groups"
 
   # Create a superuser
   echo "Creating superuser..."
-  python manage.py createsuperuser --noinput
+  # Note: --noinput requires DJANGO_SUPERUSER_USERNAME, DJANGO_SUPERUSER_EMAIL, and DJANGO_SUPERUSER_PASSWORD environment variables
+  python manage.py createsuperuser --noinput || echo "Superuser creation skipped or failed. Ensure env vars are set if needed."
 
   # Create a flag file to indicate initialization is done
-  touch ~/.initialized
+  touch "$HOME/.initialized"
 fi
 
 # Pass the container command arguments to the command

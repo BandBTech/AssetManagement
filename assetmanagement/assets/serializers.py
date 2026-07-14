@@ -79,6 +79,28 @@ class AssetSerializer(serializers.ModelSerializer):
         print("new asset",new_asset)
         return new_asset
 
+
+class AssetDetailsUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        fields = [
+            "brand",
+            "asset_model",
+            "purchase_price",
+            "depreciation_rate",
+            "maintenance_period",
+        ]
+    
+    def update(self, instance, validated_data):
+        instance.brand = validated_data.get('brand', instance.brand)
+        instance.asset_model = validated_data.get('asset_model', instance.asset_model)
+        instance.purchase_price = validated_data.get('purchase_price', instance.purchase_price)
+        instance.depreciation_rate = validated_data.get('depreciation_rate', instance.depreciation_rate)
+        instance.maintenance_period = validated_data.get('maintenance_period', instance.maintenance_period)
+        instance.save()
+        return instance
+
+
 class AssetFeedbackSerializer(serializers.ModelSerializer):
     status = serializers.CharField()
 
