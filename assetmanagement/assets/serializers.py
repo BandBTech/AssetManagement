@@ -1,11 +1,23 @@
 from rest_framework import serializers
+from django.conf import settings
 from .models import Asset
 from .services import run_yolo_and_annotate
 
 
+class CustomImageField(serializers.ImageField):
+    def to_representation(self, value):
+        if not value:
+            return None
+        url = value.url
+        backend_url = getattr(settings, 'BACKEND_URL', 'http://localhost:8000')
+        if backend_url.endswith('/'):
+            backend_url = backend_url[:-1]
+        return f"{backend_url}{url}"
+
+
 class AssetSerializer(serializers.ModelSerializer):
-    original_image = serializers.ImageField(required=False)
-    predicted_image = serializers.ImageField(read_only=True)
+    original_image = CustomImageField(required=False)
+    predicted_image = CustomImageField(read_only=True)
     is_newly_created = serializers.SerializerMethodField(read_only=True)
 
     def get_is_newly_created(self, obj):
@@ -76,7 +88,6 @@ class AssetSerializer(serializers.ModelSerializer):
         
         new_asset = super().create(validated_data)
         new_asset.is_newly_created = True
-        print("new asset",new_asset)
         return new_asset
 
 
@@ -103,6 +114,8 @@ class AssetDetailsUpdateSerializer(serializers.ModelSerializer):
 
 class AssetFeedbackSerializer(serializers.ModelSerializer):
     status = serializers.CharField()
+    original_image = CustomImageField(read_only=True)
+    predicted_image = CustomImageField(read_only=True)
 
     class Meta:
         model = Asset

@@ -2,7 +2,7 @@ env
 .env
 .env.local
 assetmanagement/media
-assetmanagement/best.pt
+assetmanagement/model
 docs
 
 
