@@ -26,9 +26,9 @@ RUN adduser --disabled-password --gecos "" --uid 1000 appuser
 
 # Copy dependency files (choose the option below that matches your progress)
 # Option A: If you kept requirements.txt
-COPY requirements.txt .
+# COPY requirements.txt .
 # Option B: If you switched to pyproject.toml & uv.lock (Recommended)
-# COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock ./
 
 # Install dependencies using uv (blazing fast)
 RUN --mount=type=cache,target=/root/.cache/uv \
