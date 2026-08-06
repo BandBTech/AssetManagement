@@ -5,6 +5,7 @@ assetmanagement/media
 assetmanagement/model
 docs
 
+assetmanagement/assetmanagement/local_settings.py
 
 # Ignore Python compiled bytecode
 __pycache__/

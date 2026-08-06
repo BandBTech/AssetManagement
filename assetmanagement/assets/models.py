@@ -9,24 +9,30 @@ class Status(models.TextChoices):
 
 
 class Asset(models.Model):
+    status = models.CharField(
+        max_length=10, choices=Status.choices, default=Status.PENDING
+    )
     original_image = models.ImageField(upload_to="uploads/originals/")
     predicted_image = models.ImageField(
         upload_to="uploads/predicted/", blank=True, null=True
     )
+    
+    label = models.JSONField(blank=True, null=True, default=list)
+    conf = models.JSONField(blank=True, null=True, default=list)
+    maker = models.CharField(max_length=255, blank=True, null=True)
+    model_no = models.CharField(max_length=255, blank=True, null=True) 
+    year = models.IntegerField(blank=True, null=True)
+    price_jpy = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    size = models.CharField(max_length=255, blank=True, null=True)
+    maintenance_cycle = models.IntegerField(blank=True, null=True, help_text="Maintenance cycle in days")
+    last_maintenance_date = models.DateField(blank=True, null=True)
+    next_maintenance_due = models.DateField(blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(
-        max_length=10, choices=Status.choices, default=Status.PENDING
-    )
-    detected_objects = models.JSONField(blank=True, null=True, default=list)
     coordinates = models.JSONField(blank=True, null=True)
     
-    # Additional data
-    brand = models.CharField(max_length=255, blank=True, null=True)
-    asset_model = models.CharField(max_length=255, blank=True, null=True) 
-    purchase_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
-    depreciation_rate = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True)
-    maintenance_period = models.IntegerField(blank=True, null=True, help_text="Maintenance period in days")
-
+    
     class Meta:
         ordering = ["-created_at"]  # newest first always
 

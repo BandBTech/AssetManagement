@@ -27,18 +27,26 @@ class AssetSerializer(serializers.ModelSerializer):
         model = Asset
         fields = [
             "id",
+            "status",
             "original_image",
             "predicted_image",
-            "detected_objects",
-            "status",
+            
+            "label",# "detected_objects",
+            "conf",
+            "maker", #"brand",
+            "model_no", # "asset_model",
+            "year",
+            "price_jpy", #"purchase_price",
+            "size"
+            "maintenance_cycle",
+            "last_maintenance_date",
+            "next_maintenance_due",
+            "notes",
+
             "created_at",
             "coordinates",
-            "brand",
-            "asset_model",
-            "purchase_price",
-            "depreciation_rate",
-            "maintenance_period",
             "is_newly_created",
+            
         ]
         read_only_fields = [
             "predicted_image",
