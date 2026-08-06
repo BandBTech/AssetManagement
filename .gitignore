@@ -5,6 +5,9 @@ assetmanagement/media
 assetmanagement/model
 docs
 
+.venv
+.claude
+
 assetmanagement/assetmanagement/local_settings.py
 
 # Ignore Python compiled bytecode
