@@ -8,6 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 # Prevents uv from creating a virtual environment inside the container
 ENV UV_SYSTEM_PYTHON=1 
+ENV UV_PROJECT_ENVIRONMENT="/usr/local"
 
 # Create and set working directory
 WORKDIR /app
@@ -32,9 +33,7 @@ COPY pyproject.toml uv.lock ./
 
 # Install dependencies using uv (blazing fast)
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install \
-    --extra-index-url https://download.pytorch.org/whl/cpu \
-    -r requirements.txt
+    uv sync --frozen
 
 # (If using Option B above, replace the line above with: uv sync --frozen)
 

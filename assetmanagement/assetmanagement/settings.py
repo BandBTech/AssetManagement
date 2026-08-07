@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 load_dotenv("../.env")
 
-BACKEND_URL = getenv("BACKEND_URL", "http://localhost:8000")
+BACKEND_URL = getenv("BACKEND_URL", "http://localhost:9000")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -29,7 +29,7 @@ BACKEND_URL = getenv("BACKEND_URL", "http://localhost:8000")
 SECRET_KEY = "django-insecure-6k^qcmi#o46%e@)++wt*uu3@r@%b567%h-+86btgqpeur+cmmd"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = getenv("DEBUG", "True").lower() in ("true", "1", "t")
 
 ALLOWED_HOSTS = []
 
@@ -126,7 +126,7 @@ WSGI_APPLICATION = "assetmanagement.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 DATABASES = {
     "default": {
-        "ENGINE": getenv("DB_ENGINE", "django.db.backends.sqlite3"),
+        "ENGINE": getenv("DB_ENGINE", "django.db.backends.postgresql"),
         "NAME": getenv("DB_NAME", BASE_DIR / "db.sqlite3"),
         "USER": getenv("DB_USER"),
         "PASSWORD": getenv("DB_PASS"),
