@@ -5,6 +5,8 @@ assetmanagement/media
 assetmanagement/model
 docs
 
+assetmanagement/staticfiles
+
 .venv
 .claude
 
