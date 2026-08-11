@@ -75,6 +75,12 @@ def run_yolo_and_annotate(image_file):
             }
         )
 
+    # Keep only 1 object with the highest confidence score
+    if detected:
+        detected = max(detected, key=lambda x: x["confidence"])
+    else:
+        detected = None
+
     _, buffer = cv2.imencode(".jpg", annotated)
     content_file = ContentFile(buffer.tobytes(), name=f"{uuid.uuid4()}.jpg")
 

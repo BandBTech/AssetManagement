@@ -8,17 +8,17 @@ if [ ! -f "$HOME/.initialized" ]; then
 
   echo "Initializing the application..."
 
-  # Check if local_settings.py file exists
-#   if [ ! -f ./assetmanagemen/local_settings.py ]; then
-#     echo "Copying local_settings_sample.py to local_settings.py..."
-#     cp ./assetmanagemen/local_settings_sample.py ./assetmanagemen/local_settings.py
-#   fi
+# issue here
+  # if [ "$DEPLOYMENT" == "production" ]; then
+  #   #Copy the static files to the static root
+  #   echo "Copying static files to static root..."
+  #   python manage.py collectstatic --noinput
+  # fi
 
-  if [ "$DEPLOYMENT" == "production" ]; then
-    #Copy the static files to the static root
-    echo "Copying static files to static root..."
-    python manage.py collectstatic --noinput
-  fi
+# issue here
+  # #Copy the static files to the static root (always needed since Nginx serves them)
+  echo "Copying static files to static root..."
+  python manage.py collectstatic --noinput
 
   # Run the migration and other initialization tasks
   echo "Running migrations..."

@@ -26,12 +26,10 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         if attrs["password"] != attrs["confirm_password"]:
             raise serializers.ValidationError(
-                {"confirm_password": _("Passwords do not match.")}
+                {"message": "Passwords do not match."}
             )
         return attrs
 
-    # we are overriding this method to remove confirm_password from the
-    # validated data before creating the user.
     def create(self, validated_data):
         validated_data.pop("confirm_password")
         return User.objects.create_user(**validated_data)

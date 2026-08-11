@@ -8,29 +8,28 @@ from .serializers import AssetSerializer, AssetFeedbackSerializer, AssetDetailsU
 
 
 class AssetListCreateView(ListCreateAPIView):
+    queryset = Asset.objects.all()
     serializer_class = AssetSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        return Asset.objects.all().order_by("-created_at")
 
 
-class AssetRetrieveView(RetrieveUpdateAPIView):
+class AssetRetrieveUpdateView(RetrieveUpdateAPIView):
+    queryset = Asset.objects.all()
     serializer_class = AssetSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        return Asset.objects.filter(id=self.kwargs["pk"])
 
     def get_serializer_class(self):
-        if self.request.method == "PUT":
+        if self.request and self.request.method in ["PUT", "PATCH"]:
             return AssetDetailsUpdateSerializer
         return AssetSerializer
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(AssetSerializer(instance, context=self.get_serializer_context()).data)
+
 
 class AssetFeedbackView(UpdateAPIView):
+    queryset = Asset.objects.all()
     serializer_class = AssetFeedbackSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        return Asset.objects.filter(id=self.kwargs["pk"])

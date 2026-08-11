@@ -26,12 +26,15 @@ BACKEND_URL = getenv("BACKEND_URL", "http://localhost:9000")
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-6k^qcmi#o46%e@)++wt*uu3@r@%b567%h-+86btgqpeur+cmmd"
-
-# SECURITY WARNING: don't run with debug turned on in production!
+SECRET_KEY = getenv("SECRET_KEY")
 DEBUG = getenv("DEBUG", "True").lower() in ("true", "1", "t")
+ALLOWED_HOSTS = [host.strip() for host in getenv("ALLOWED_HOSTS", "").split(",") if host.strip()]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in getenv("CORS_ALLOWED_ORIGINS", "").split(",") if origin.strip()]
 
-ALLOWED_HOSTS = []
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
 
 
 # Application definition
@@ -96,9 +99,6 @@ SPECTACULAR_SETTINGS = {
         "filter": True,
         "displayRequestDuration": True,
     },
-    "ENUM_NAME_OVERRIDES": {
-        "_checkupStatusEnum": "user_profile.models.CheckupStatus",
-    },
 }
 
 
@@ -135,7 +135,7 @@ DATABASES = {
     }
 }
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
@@ -180,6 +180,3 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
-CORS_ALLOWED_ORIGINS = [
-]

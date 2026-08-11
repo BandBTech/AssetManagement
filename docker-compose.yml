@@ -37,9 +37,12 @@ services:
       - DEPLOYMENT=${DEPLOYMENT:-development}
       - DEBUG=${DEBUG:-1}
       - HTTP_PORT=${HTTP_PORT:-8000}
+      - SECRET_KEY=${SECRET_KEY}
+      - BACKEND_URL=${BACKEND_URL:-http://localhost:9000}
     volumes:
       - ./assetmanagement:/app
       - gunicorn-socket:/tmp
+      - ./assetmanagement/staticfiles:/app/static
     depends_on:
       - postgres
 

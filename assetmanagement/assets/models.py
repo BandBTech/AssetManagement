@@ -1,3 +1,4 @@
+from datetime import timedelta
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -16,9 +17,8 @@ class Asset(models.Model):
     predicted_image = models.ImageField(
         upload_to="uploads/predicted/", blank=True, null=True
     )
-    
-    label = models.JSONField(blank=True, null=True, default=list)
-    conf = models.JSONField(blank=True, null=True, default=list)
+    label = models.JSONField(blank=True, null=True)
+    conf = models.JSONField(blank=True, null=True)
     maker = models.CharField(max_length=255, blank=True, null=True)
     model_no = models.CharField(max_length=255, blank=True, null=True) 
     year = models.IntegerField(blank=True, null=True)
@@ -30,11 +30,15 @@ class Asset(models.Model):
     notes = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
-    coordinates = models.JSONField(blank=True, null=True)
-    
+    coordinates = models.JSONField()
     
     class Meta:
         ordering = ["-created_at"]  # newest first always
 
+    def save(self, *args, **kwargs):
+        if self.last_maintenance_date and self.maintenance_cycle:
+            self.next_maintenance_due = self.last_maintenance_date + timedelta(days=self.maintenance_cycle)
+        super().save(*args, **kwargs)
+
     def __str__(self):  
-        return f"{self.id} - {self.status}"
+        return f"{self.label} - {self.status}"
