@@ -4,22 +4,23 @@ from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Asset
-from .serializers import AssetSerializer, AssetFeedbackSerializer, AssetDetailsUpdateSerializer
+from .serializers import AssetCreateSerializer, AssetFeedbackSerializer, AssetDetailsAddSerializer, AssetRetrieveSerializer
 
 
 class AssetListCreateView(ListCreateAPIView):
     queryset = Asset.objects.all()
-    serializer_class = AssetSerializer
+    serializer_class = AssetCreateSerializer
 
 
 class AssetRetrieveUpdateView(RetrieveUpdateAPIView):
     queryset = Asset.objects.all()
-    serializer_class = AssetSerializer
+    serializer_class = AssetCreateSerializer
+    http_method_names = ['get', 'put', 'head', 'options']
 
     def get_serializer_class(self):
-        if self.request and self.request.method in ["PUT", "PATCH"]:
-            return AssetDetailsUpdateSerializer
-        return AssetSerializer
+        if self.request and self.request.method == "PUT":
+            return AssetDetailsAddSerializer
+        return AssetRetrieveSerializer
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -27,7 +28,7 @@ class AssetRetrieveUpdateView(RetrieveUpdateAPIView):
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
-        return Response(AssetSerializer(instance, context=self.get_serializer_context()).data)
+        return Response(serializer.data)
 
 
 class AssetFeedbackView(UpdateAPIView):

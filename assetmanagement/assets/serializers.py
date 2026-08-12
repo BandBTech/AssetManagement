@@ -1,3 +1,4 @@
+import json
 from rest_framework import serializers
 from django.conf import settings
 from .models import Asset
@@ -15,20 +16,13 @@ class CustomImageField(serializers.ImageField):
         return f"{backend_url}{url}"
     
 
-class CoordinatesSerializer(serializers.Serializer):
-    lat = serializers.FloatField(required=True)
-    lng = serializers.FloatField(required=True)
 
-
-class AssetSerializer(serializers.ModelSerializer):
-    coordinates = CoordinatesSerializer(required=True)
+class AssetCreateSerializer(serializers.ModelSerializer):
     original_image = CustomImageField(read_only=True)
     predicted_image = CustomImageField(read_only=True)
+    # the image field will be mapped to original_image
     image = CustomImageField(source="original_image", required=True, write_only=True)
     is_newly_created = serializers.SerializerMethodField(read_only=True)
-
-    def get_is_newly_created(self, obj) -> bool:
-        return getattr(obj, "is_newly_created", False)
 
     class Meta:
         model = Asset
@@ -37,49 +31,48 @@ class AssetSerializer(serializers.ModelSerializer):
             "status",
             "original_image",
             "predicted_image",
-            "random_image",
             "image",
             "label",
             "conf",
-            "maker", 
-            "model_no", 
-            "year",
-            "price_jpy",
-            "size",
-            "maintenance_cycle",
-            "last_maintenance_date",
-            "next_maintenance_due",
-            "notes",
             "created_at",
             "coordinates",
             "is_newly_created",
         ]
-        # read_only_fields = [
-        #     "id",
-        #     "status",
-        #     "original_image",
-        #     "predicted_image",
-        #     "label",
-        #     "conf",
-        #     "maker",
-        #     "model_no",
-        #     "year",
-        #     "price_jpy",
-        #     "size",
-        #     "maintenance_cycle",
-        #     "last_maintenance_date",
-        #     "next_maintenance_due",
-        #     "notes",
-        #     "created_at",
-        #     "is_newly_created",
-        # ]
+        read_only_fields = [
+            "id",
+            "status",
+            "original_image",
+            "predicted_image",
+            "label",
+            "conf",
+            "created_at",
+            "is_newly_created",
+        ]
+
+    def validate_coordinates(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Coordinates must be a valid JSON object")
+        keys = value.keys()
+        if 'lat' not in keys or 'lng' not in keys:
+            raise serializers.ValidationError("Both lat and lng must be provided")
+        try:
+            lat = float(value['lat'])
+            lng = float(value['lng'])
+            return {"lat": lat, "lng": lng}
+        except (ValueError, TypeError):
+            raise serializers.ValidationError("Values must be valid numbers")
+        
+
+    def get_is_newly_created(self, obj) -> bool:
+        return getattr(obj, "is_newly_created", False)
+
 
     def create(self, validated_data):
-        image = validated_data.get('original_image')
+        original_image = validated_data.get('original_image')
         coordinates = validated_data.get('coordinates')
         
         try:
-            predicted_image, detected_object = run_yolo_and_annotate(image)
+            predicted_image, detected_object = run_yolo_and_annotate(original_image)
         except ValueError as e:
             raise serializers.ValidationError({"error": str(e)})
         except Exception as e:
@@ -106,18 +99,35 @@ class AssetSerializer(serializers.ModelSerializer):
         validated_data['conf'] = conf_val
         validated_data['status'] = "PENDING"
         
+        # instead of super().create, can i not do validated_data.save()?
         new_asset = super().create(validated_data)
+
         new_asset.is_newly_created = True
-        return new_asset
+        return new_asset        
 
 
-class AssetDetailsUpdateSerializer(serializers.ModelSerializer):
+class AssetDetailsAddSerializer(serializers.ModelSerializer):
+    is_newly_created = serializers.SerializerMethodField(read_only=True, default=False)
+    maker = serializers.CharField(required=True, allow_blank=False)
+    model_no = serializers.CharField(required=True, allow_blank=False)
+    year = serializers.IntegerField(required=True)
+    price_jpy = serializers.DecimalField(max_digits=12, decimal_places=2, required=True)
+    size = serializers.CharField(required=True, allow_blank=False)
+    maintenance_cycle = serializers.IntegerField(required=True)
+    last_maintenance_date = serializers.DateField(required=True)
+    next_maintenance_due = serializers.DateField(required=True)
+    notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     class Meta:
         model = Asset
         fields = [
+            "id",
             "status",
-            "maker",
-            "model_no",
+            "original_image",
+            "predicted_image",
+            "label",
+            "conf",
+            "maker", 
+            "model_no", 
             "year",
             "price_jpy",
             "size",
@@ -125,28 +135,51 @@ class AssetDetailsUpdateSerializer(serializers.ModelSerializer):
             "last_maintenance_date",
             "next_maintenance_due",
             "notes",
+            "created_at",
+            "coordinates",
+            "is_newly_created",
+        ]
+        read_only_fields=[
+            "id",
+            "original_image",
+            "predicted_image",
+            "label",
+            "conf",
+            "is_newly_created",
+            "created_at",
+            "coordinates"
         ]
 
+    def get_is_newly_created(self, obj) -> bool:
+        return getattr(obj, "is_newly_created", False)
 
-# class AssetDetailsUpdateSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Asset
-#         fields = [
-#             "brand",
-#             "asset_model",
-#             "purchase_price",
-#             "depreciation_rate",
-#             "maintenance_period",
-#         ]
-    
-#     def update(self, instance, validated_data):
-#         instance.brand = validated_data.get('brand', instance.brand)
-#         instance.asset_model = validated_data.get('asset_model', instance.asset_model)
-#         instance.purchase_price = validated_data.get('purchase_price', instance.purchase_price)
-#         instance.depreciation_rate = validated_data.get('depreciation_rate', instance.depreciation_rate)
-#         instance.maintenance_period = validated_data.get('maintenance_period', instance.maintenance_period)
-#         instance.save()
-#         return instance
+
+class AssetRetrieveSerializer(serializers.ModelSerializer):
+    original_image = CustomImageField(read_only=True)
+    predicted_image = CustomImageField(read_only=True)
+
+    class Meta:
+        model = Asset
+        fields = [
+            "id",
+            "status",
+            "original_image",
+            "predicted_image",
+            "label",
+            "conf",
+            "maker", 
+            "model_no", 
+            "year",
+            "price_jpy",
+            "size",
+            "maintenance_cycle",
+            "last_maintenance_date",
+            "next_maintenance_due",
+            "notes",
+            "created_at",
+            "coordinates"
+        ]
+        read_only_fields = fields  # All fields are read-only for retrieval
 
 
 

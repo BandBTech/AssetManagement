@@ -70,6 +70,7 @@ MIDDLEWARE = [
 ]
 
 REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "assetmanagement.exceptions.custom_exception_handler",
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.OrderingFilter",
