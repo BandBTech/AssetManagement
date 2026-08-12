@@ -39,6 +39,10 @@ services:
       - HTTP_PORT=${HTTP_PORT:-8000}
       - SECRET_KEY=${SECRET_KEY}
       - BACKEND_URL=${BACKEND_URL:-http://localhost:9000}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1,asset-mgmt-stg.smarthyperplanes.com}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost:8000,http://localhost:9000,https://asset-mgmt-stg.smarthyperplanes.com}
+      - CORS_ALLOWED_ORIGIN=${CORS_ALLOWED_ORIGIN:-https://asset-mgmt-stg.smarthyperplanes.com}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000,https://asset-mgmt-stg.smarthyperplanes.com}
     volumes:
       - ./assetmanagement:/app
       - gunicorn-socket:/tmp
