@@ -28,9 +28,14 @@ BACKEND_URL = getenv("BACKEND_URL", "http://localhost:9000")
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = getenv("SECRET_KEY")
 DEBUG = getenv("DEBUG", "True").lower() in ("true", "1", "t")
-ALLOWED_HOSTS = [host.strip() for host in getenv("ALLOWED_HOSTS", "").split(",") if host.strip()]
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()]
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in getenv("CORS_ALLOWED_ORIGINS", "").split(",") if origin.strip()]
+ALLOWED_HOSTS = [host.strip() for host in getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,asset-mgmt-stg.smarthyperplanes.com").split(",") if host.strip()]
+if DEBUG:
+    for local_host in ["localhost", "127.0.0.1", "[::1]"]:
+        if local_host not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(local_host)
+
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in getenv("CSRF_TRUSTED_ORIGINS", "http://localhost:8000,http://localhost:9000,https://asset-mgmt-stg.smarthyperplanes.com").split(",") if origin.strip()]
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,https://asset-mgmt-stg.smarthyperplanes.com").split(",") if origin.strip()]
 
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

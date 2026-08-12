@@ -12,6 +12,8 @@ ENV UV_PROJECT_ENVIRONMENT="/usr/local"
 
 # Create and set working directory
 WORKDIR /app
+# this command will crete app directory in the container image and 
+# cd into it, it now replaces assetmanagement directory.
 
 # Install system dependencies
 RUN apt update -y && \
@@ -39,13 +41,20 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Copy application code with proper ownership
 COPY --chown=appuser:appuser ./assetmanagement .
+# this command here copies all the files from assetmanagement from my 
+# laptop to the /app of the container image
+# it also sets the ownership of the of the app to appuser
+# Adding --chown=appuser:appuser ensures appuser actually owns the 
+# application code inside /app so it can read, write, or create files there later.
 
 # Set execute permission for entrypoint.sh
 COPY --chown=appuser:appuser docker-entrypoint.sh /docker-entrypoint.sh
+#Copies docker-entrypoint.sh from your computer into /docker-entrypoint.sh inside the container image, giving ownership to appuser.
 RUN chmod +x /docker-entrypoint.sh
+#it makes this file executable
 
 # Set the default user to appuser
-USER appuser
+# USER appuser
 
 # Set the entrypoint
 ENTRYPOINT ["bash", "/docker-entrypoint.sh"]

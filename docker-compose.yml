@@ -43,10 +43,15 @@ services:
       - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-http://localhost:8000,http://localhost:9000,https://asset-mgmt-stg.smarthyperplanes.com}
       - CORS_ALLOWED_ORIGIN=${CORS_ALLOWED_ORIGIN:-https://asset-mgmt-stg.smarthyperplanes.com}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000,https://asset-mgmt-stg.smarthyperplanes.com}
+    
     volumes:
+      # there is one big issue with volumes, even after assigning /assetmanagement to appuser, because of this
+      # volume mount, the permission gets overridden by root.
       - ./assetmanagement:/app
+      # because of this, any changes in the assetmanagement will be automatically reflected in the app too without building it again.
       - gunicorn-socket:/tmp
-      - ./assetmanagement/staticfiles:/app/static
+      - ./assetmanagement/staticfiles:/app/staticfiles
+      # this above part created the staticfiles, it saw that it used statcfiles, and there is no static files present, so it created one.
     depends_on:
       - postgres
 
@@ -60,7 +65,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./nginx/default.conf:/etc/nginx/templates/default.conf.template
-      - ./assetmanagement/staticfiles:/usr/share/nginx/html/static
+      - ./assetmanagement/staticfiles:/usr/share/nginx/html/staticfiles
       - ./assetmanagement/media:/usr/share/nginx/html/media
       - gunicorn-socket:/tmp
     ports:
