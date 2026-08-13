@@ -257,19 +257,8 @@ class AssetAPIEndpointsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
 
-    def test_patch_asset_endpoint_disabled(self):
+    def test_patch_asset_endpoint_status_update(self):
         url = reverse("asset-detail", kwargs={"pk": self.asset.pk})
-        payload = {"maker": "Samsung"}
-        response = self.client.patch(url, payload, format="json")
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-    def test_retrieve_non_existent_asset_404(self):
-        url = reverse("asset-detail", kwargs={"pk": 99999})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_feedback_asset_endpoint_patch(self):
-        url = reverse("asset-feedback", kwargs={"pk": self.asset.pk})
         payload = {"status": "INCORRECT"}
         response = self.client.patch(url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -277,3 +266,10 @@ class AssetAPIEndpointsTestCase(APITestCase):
 
         self.asset.refresh_from_db()
         self.assertEqual(self.asset.status, "INCORRECT")
+
+    def test_retrieve_non_existent_asset_404(self):
+        url = reverse("asset-detail", kwargs={"pk": 99999})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+

@@ -1,6 +1,7 @@
 from datetime import timedelta
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from authentication.models import User
 
 
 class Status(models.TextChoices):
@@ -10,6 +11,7 @@ class Status(models.TextChoices):
 
 
 class Asset(models.Model):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="assets")
     status = models.CharField(
         max_length=10, choices=Status.choices, default=Status.PENDING
     )

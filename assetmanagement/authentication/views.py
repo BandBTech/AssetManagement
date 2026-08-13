@@ -1,5 +1,6 @@
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny
+from base.permissions import IsSuperUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import (
@@ -18,7 +19,7 @@ from .serializers import UserLoginSerializer, UserRegisterSerializer
 class UserRegisterView(CreateAPIView):
     # queryset = User.objects.all()
     serializer_class = UserRegisterSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsSuperUser]
 
     def create(self, request):
         serializer = self.get_serializer(data=request.data)

@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import AssetListCreateView, AssetRetrieveUpdateView, AssetFeedbackView
+from .views import AssetListCreateView, AssetRetrieveUpdateView
 
 urlpatterns = [
     path("", AssetListCreateView.as_view(), name="asset-list-create"),
     path("<int:pk>/", AssetRetrieveUpdateView.as_view(), name="asset-detail"),
-    path("<int:pk>/feedback/", AssetFeedbackView.as_view(), name="asset-feedback"),
+    # path("<int:pk>/feedback/", AssetFeedbackView.as_view(), name="asset-feedback"),
 ]

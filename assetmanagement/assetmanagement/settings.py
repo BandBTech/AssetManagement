@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     ##
     "authentication",
     "assets",
+    "admin"
 ]
 
 AUTH_USER_MODEL = "authentication.User"

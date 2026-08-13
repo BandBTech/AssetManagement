@@ -5,12 +5,28 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
+from django.contrib.auth import get_user_model
 from assets.models import Asset
-from .permissions import IsSuperUser
-from .serializers import AdminAssetSerializer, AdminAssetStatsSerializer
+from drf_spectacular.utils import extend_schema
+from base.permissions import IsSuperUser
+from .serializers import AdminAssetSerializer, AdminAssetStatsSerializer, AdminUserSerializer
+
+User = get_user_model()
+
+
+class AdminUserViewSet(viewsets.ModelViewSet):
+    http_method_names = ["get", "put", "patch", "delete", "head", "options"]
+    queryset = User.objects.all().order_by("-date_joined")
+    serializer_class = AdminUserSerializer
+    permission_classes = [IsSuperUser]
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ["is_active", "is_staff", "is_superuser", "email_verified"]
+    search_fields = ["username", "email", "first_name", "last_name"]
+    ordering_fields = ["id", "username", "email", "date_joined", "last_login"]
 
 
 class AdminAssetViewSet(viewsets.ModelViewSet):
+    http_method_names = ["get", "put", "patch", "delete", "head", "options"]
     queryset = Asset.objects.all()
     serializer_class = AdminAssetSerializer
     permission_classes = [IsSuperUser]
@@ -24,6 +40,12 @@ class AdminAssetViewSet(viewsets.ModelViewSet):
         "price_jpy",
     ]
 
+    @extend_schema(
+        summary="Get Admin Asset Statistics",
+        description="Retrieves aggregate metrics including total asset count, pending, correct, incorrect status counts, and maintenance due within 30 days.",
+        responses={200: AdminAssetStatsSerializer},
+        # tags=["Admin Assets"],
+    )
     @action(detail=False, methods=["get"], url_path="stats")
     def stats(self, request):
         today = timezone.now().date()

@@ -4,7 +4,6 @@ from django.conf import settings
 from .models import Asset
 from .services import run_yolo_and_annotate
 
-
 class CustomImageField(serializers.ImageField):
     def to_representation(self, value):
         if not value:
@@ -14,7 +13,6 @@ class CustomImageField(serializers.ImageField):
         if backend_url.endswith('/'):
             backend_url = backend_url[:-1]
         return f"{backend_url}{url}"
-    
 
 
 class AssetCreateSerializer(serializers.ModelSerializer):
@@ -188,7 +186,6 @@ class AssetRetrieveSerializer(serializers.ModelSerializer):
 
 
 
-
 class AssetFeedbackSerializer(serializers.ModelSerializer):
     status = serializers.CharField()
     original_image = CustomImageField(read_only=True)
@@ -201,6 +198,7 @@ class AssetFeedbackSerializer(serializers.ModelSerializer):
             "original_image",
             "predicted_image",
             "label",
+            "conf",
             "status",
             "created_at",
         ]
@@ -209,11 +207,12 @@ class AssetFeedbackSerializer(serializers.ModelSerializer):
             "original_image",
             "predicted_image",
             "label",
+            "conf",
             "created_at",
         ]
 
     def validate_status(self, value):
         if value.lower() not in ["correct", "incorrect"]:
-            raise serializers.ValidationError({"error": "Feedback must be 'correct' or 'incorrect'"})
+            raise serializers.ValidationError("Feedback must be 'correct' or 'incorrect'")
         return value.upper()
 
