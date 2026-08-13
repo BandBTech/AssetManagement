@@ -11,6 +11,23 @@ class AssetListCreateView(ListCreateAPIView):
     queryset = Asset.objects.all()
     serializer_class = AssetCreateSerializer
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        asset = serializer.save()
+
+        is_created = getattr(asset, "is_newly_created", True)
+        if is_created:
+            # this does serialization, converting instance to dict.
+            response_serializer = AssetCreateSerializer(asset, context={"request": request})
+            status_code = status.HTTP_201_CREATED
+        else:
+            response_serializer = AssetRetrieveSerializer(asset, context={"request": request})
+            status_code = status.HTTP_200_OK
+
+        return Response(response_serializer.data, status=status_code)
+
+
 
 class AssetRetrieveUpdateView(RetrieveUpdateAPIView):
     queryset = Asset.objects.all()

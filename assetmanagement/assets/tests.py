@@ -190,6 +190,37 @@ class AssetAPIEndpointsTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("id", response.data)
         self.assertEqual(response.data["status"], "PENDING")
+        self.assertNotIn("maker", response.data)
+
+    def test_create_or_retrieve_existing_asset_endpoint(self):
+        from unittest.mock import patch
+        url = reverse("asset-list-create")
+        test_image1 = generate_test_image("post_dup1.jpg")
+        payload = {
+            "coordinates": '{"lat": 27.700769, "lng": 85.300140}',
+            "image": test_image1,
+        }
+        with patch("assets.serializers.run_yolo_and_annotate") as mock_yolo:
+            mock_yolo.return_value = ("uploads/predicted/test.jpg", {"label": "refrigerator", "confidence": 0.95})
+            
+            # First request -> 201 Created (AssetCreateSerializer - no maker/model_no fields)
+            res1 = self.client.post(url, payload, format="multipart")
+            self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
+            self.assertTrue(res1.data["is_newly_created"])
+            self.assertNotIn("maker", res1.data)
+
+            # Second request -> 200 OK (AssetRetrieveSerializer - includes detail fields)
+            test_image2 = generate_test_image("post_dup2.jpg")
+            payload2 = {
+                "coordinates": '{"lat": 27.700769, "lng": 85.300140}',
+                "image": test_image2,
+            }
+            res2 = self.client.post(url, payload2, format="multipart")
+            self.assertEqual(res2.status_code, status.HTTP_200_OK)
+            self.assertFalse(res2.data["is_newly_created"])
+            self.assertEqual(res2.data["id"], res1.data["id"])
+            self.assertIn("maker", res2.data)
+
 
     def test_retrieve_asset_endpoint_get(self):
         url = reverse("asset-detail", kwargs={"pk": self.asset.pk})

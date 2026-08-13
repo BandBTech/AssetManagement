@@ -34,7 +34,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         validated_data.pop("confirm_password")
         return User.objects.create_user(**validated_data)
 
-
+  
 class UserLoginSerializer(serializers.Serializer):
     identifier = serializers.CharField(help_text="Email or username")
     password = serializers.CharField(write_only=True)

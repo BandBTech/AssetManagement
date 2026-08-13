@@ -83,27 +83,27 @@ class AssetCreateSerializer(serializers.ModelSerializer):
         label_val = detected_object.get("label") if isinstance(detected_object, dict) else None
         conf_val = detected_object.get("confidence") if isinstance(detected_object, dict) else None
 
-        # Check if this asset already exists in the database
         if coordinates and label_val:
-            existing_asset = Asset.objects.filter(
+            asset, created = Asset.objects.get_or_create(
                 coordinates=coordinates,
-                label=label_val
-            ).first()
+                label=label_val,
+                defaults={
+                    "original_image": original_image,
+                    "predicted_image": predicted_image,
+                    "conf": conf_val,
+                    "status": "PENDING",
+                }
+            )
+        else:
+            validated_data['predicted_image'] = predicted_image
+            validated_data['label'] = label_val
+            validated_data['conf'] = conf_val
+            validated_data['status'] = "PENDING"
+            asset = super().create(validated_data) 
+            created = True
 
-            if existing_asset:
-                existing_asset.is_newly_created = False
-                return existing_asset
-
-        validated_data['predicted_image'] = predicted_image
-        validated_data['label'] = label_val
-        validated_data['conf'] = conf_val
-        validated_data['status'] = "PENDING"
-        
-        # instead of super().create, can i not do validated_data.save()?
-        new_asset = super().create(validated_data)
-
-        new_asset.is_newly_created = True
-        return new_asset        
+        asset.is_newly_created = created
+        return asset        
 
 
 class AssetDetailsAddSerializer(serializers.ModelSerializer):
@@ -157,6 +157,7 @@ class AssetDetailsAddSerializer(serializers.ModelSerializer):
 class AssetRetrieveSerializer(serializers.ModelSerializer):
     original_image = CustomImageField(read_only=True)
     predicted_image = CustomImageField(read_only=True)
+    is_newly_created = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Asset
@@ -177,9 +178,14 @@ class AssetRetrieveSerializer(serializers.ModelSerializer):
             "next_maintenance_due",
             "notes",
             "created_at",
-            "coordinates"
+            "coordinates",
+            "is_newly_created",
         ]
         read_only_fields = fields  # All fields are read-only for retrieval
+
+    def get_is_newly_created(self, obj) -> bool:
+        return getattr(obj, "is_newly_created", False)
+
 
 
 
