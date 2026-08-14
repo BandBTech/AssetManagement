@@ -1,9 +1,9 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from assets.models import Asset
 from assets.serializers import CustomImageField
+from authentication.models import User
 
-User = get_user_model()
+# User = get_user_model()
 
 
 class AdminAssetSerializer(serializers.ModelSerializer):
@@ -14,6 +14,7 @@ class AdminAssetSerializer(serializers.ModelSerializer):
         model = Asset
         fields = [
             "id",
+            "user",
             "status",
             "original_image",
             "predicted_image",
