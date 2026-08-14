@@ -2,13 +2,39 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 
 from .models import User
 
 
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "User Registration Example",
+            value={
+                "username": "john_doe",
+                "email": "john@example.com",
+                "password": "SecurePassword123",
+                "confirm_password": "SecurePassword123",
+            },
+            request_only=True,
+            media_type="application/json",
+        ),
+    ]
+)
 class UserRegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
-    confirm_password = serializers.CharField(write_only=True)
+    username = serializers.CharField(
+        help_text="Required username", required=True
+    )
+    email = serializers.EmailField(
+        help_text="User email address", required=True
+    )
+    password = serializers.CharField(
+        write_only=True, min_length=8, required=True
+    )
+    confirm_password = serializers.CharField(
+        write_only=True, required=True
+    )
 
     class Meta:
         model = User
@@ -35,9 +61,31 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data)
 
   
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            "User Login Example",
+            value={
+                "identifier": "john_doe/john@doe.com",
+                "password": "SecurePassword123",
+            },
+            request_only=True,
+            media_type="application/json",
+        ),
+        OpenApiExample(
+            "User Login Example (Form Data)",
+            value={
+                "identifier": "john_doe/john@doe.com",
+                "password": "SecurePassword123",
+            },
+            request_only=True,
+            media_type="multipart/form-data",
+        ),
+    ]
+)
 class UserLoginSerializer(serializers.Serializer):
-    identifier = serializers.CharField(help_text="Email or username")
-    password = serializers.CharField(write_only=True)
+    identifier = serializers.CharField( required=True )
+    password = serializers.CharField( required=True )
 
     def validate(self, attrs):
         identifier = attrs.get("identifier")

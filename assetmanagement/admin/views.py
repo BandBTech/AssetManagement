@@ -7,15 +7,23 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from assets.models import Asset
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from base.permissions import IsSuperUser
 from .serializers import AdminAssetSerializer, AdminAssetStatsSerializer, AdminUserSerializer
 
 User = get_user_model()
 
 
+@extend_schema_view(
+    list=extend_schema(summary="Admin: List Users", tags=["Admin Users"]),
+    retrieve=extend_schema(summary="Admin: Get User Details", tags=["Admin Users"]),
+    create=extend_schema(summary="Admin: Create User", tags=["Admin Users"]),
+    update=extend_schema(summary="Admin: Update User (Full)", tags=["Admin Users"]),
+    partial_update=extend_schema(summary="Admin: Update User (Partial)", tags=["Admin Users"]),
+    destroy=extend_schema(summary="Admin: Delete User", tags=["Admin Users"]),
+)
 class AdminUserViewSet(viewsets.ModelViewSet):
-    http_method_names = ["get", "put", "patch", "delete", "head", "options"]
+    http_method_names = ["get", "post", "put", "patch", "delete", "head", "options"]
     queryset = User.objects.all().order_by("-date_joined")
     serializer_class = AdminUserSerializer
     permission_classes = [IsSuperUser]
@@ -25,6 +33,14 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     ordering_fields = ["id", "username", "email", "date_joined", "last_login"]
 
 
+@extend_schema_view(
+    list=extend_schema(summary="Admin: List Assets", tags=["Admin Assets"]),
+    retrieve=extend_schema(summary="Admin: Get Asset Details", tags=["Admin Assets"]),
+    create=extend_schema(summary="Admin: Create Asset", tags=["Admin Assets"]),
+    update=extend_schema(summary="Admin: Update Asset (Full)", tags=["Admin Assets"]),
+    partial_update=extend_schema(summary="Admin: Update Asset (Partial)", tags=["Admin Assets"]),
+    destroy=extend_schema(summary="Admin: Delete Asset", tags=["Admin Assets"]),
+)
 class AdminAssetViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "put", "patch", "delete", "head", "options"]
     queryset = Asset.objects.all()
@@ -41,10 +57,10 @@ class AdminAssetViewSet(viewsets.ModelViewSet):
     ]
 
     @extend_schema(
-        summary="Get Admin Asset Statistics",
-        description="Retrieves aggregate metrics including total asset count, pending, correct, incorrect status counts, and maintenance due within 30 days.",
+        summary="Admin: Get Asset Statistics",
+        description="Retrieves aggregate metrics including total asset count, status breakdown, and upcoming maintenance.",
         responses={200: AdminAssetStatsSerializer},
-        # tags=["Admin Assets"],
+        tags=["Admin Assets"],
     )
     @action(detail=False, methods=["get"], url_path="stats")
     def stats(self, request):
@@ -69,3 +85,4 @@ class AdminAssetViewSet(viewsets.ModelViewSet):
 
         serializer = AdminAssetStatsSerializer(stats_data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+

@@ -9,6 +9,7 @@ class Status(models.TextChoices):
     CORRECT = "CORRECT", _("Correct")
     INCORRECT = "INCORRECT", _("Incorrect")
 
+    
 
 class Asset(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="assets")

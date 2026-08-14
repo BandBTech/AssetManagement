@@ -1,8 +1,34 @@
 import json
 from rest_framework import serializers
 from django.conf import settings
-from .models import Asset
+from .models import Asset, Status
 from .services import run_yolo_and_annotate
+
+from drf_spectacular.utils import extend_schema_field
+
+
+@extend_schema_field({
+    "type": "object",
+    "properties": {
+        "lat": {
+            "type": "number",
+            "format": "double",
+            "description": "Latitude coordinate",
+            "example": 27.700769,
+        },
+        "lng": {
+            "type": "number",
+            "format": "double",
+            "description": "Longitude coordinate",
+            "example": 85.300140,
+        },
+    },
+    "required": ["lat", "lng"],
+    "example": {"lat": 27.700769, "lng": 85.300140},
+})
+class CoordinatesJSONField(serializers.JSONField):
+    pass
+
 
 class CustomImageField(serializers.ImageField):
     def to_representation(self, value):
@@ -18,8 +44,8 @@ class CustomImageField(serializers.ImageField):
 class AssetCreateSerializer(serializers.ModelSerializer):
     original_image = CustomImageField(read_only=True)
     predicted_image = CustomImageField(read_only=True)
-    # the image field will be mapped to original_image
     image = CustomImageField(source="original_image", required=True, write_only=True)
+    coordinates = CoordinatesJSONField(required=True)
     is_newly_created = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
@@ -106,6 +132,7 @@ class AssetCreateSerializer(serializers.ModelSerializer):
 
 class AssetDetailsAddSerializer(serializers.ModelSerializer):
     is_newly_created = serializers.SerializerMethodField(read_only=True, default=False)
+    status = serializers.ChoiceField(choices=Status.choices, default="CORRECT")
     maker = serializers.CharField(required=True, allow_blank=False)
     model_no = serializers.CharField(required=True, allow_blank=False)
     year = serializers.IntegerField(required=True)
@@ -115,6 +142,7 @@ class AssetDetailsAddSerializer(serializers.ModelSerializer):
     last_maintenance_date = serializers.DateField(required=True)
     next_maintenance_due = serializers.DateField(required=True)
     notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
     class Meta:
         model = Asset
         fields = [
@@ -137,7 +165,7 @@ class AssetDetailsAddSerializer(serializers.ModelSerializer):
             "coordinates",
             "is_newly_created",
         ]
-        read_only_fields=[
+        read_only_fields = [
             "id",
             "original_image",
             "predicted_image",
@@ -145,7 +173,7 @@ class AssetDetailsAddSerializer(serializers.ModelSerializer):
             "conf",
             "is_newly_created",
             "created_at",
-            "coordinates"
+            "coordinates",
         ]
 
     def get_is_newly_created(self, obj) -> bool:
@@ -187,7 +215,7 @@ class AssetRetrieveSerializer(serializers.ModelSerializer):
 
 
 class AssetFeedbackSerializer(serializers.ModelSerializer):
-    status = serializers.CharField()
+    status = serializers.ChoiceField(choices=Status.choices)
     original_image = CustomImageField(read_only=True)
     predicted_image = CustomImageField(read_only=True)
 

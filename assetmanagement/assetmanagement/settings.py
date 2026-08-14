@@ -96,17 +96,28 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
-# DRF Spectacular
+# DRF Spectacular Settings
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Asset Management API",
-    "DESCRIPTION": "API for managing assets",
+    "TITLE": "Asset Management & AI Detection API",
+    "DESCRIPTION": """API documentation for Asset Management system.
+
+### Key Workflows:
+1. **Upload Asset (`POST /api/assets/`)**: Upload image + coordinates (`{"lat": 27.7, "lng": 85.3}`) for YOLO object detection.
+2. **Add Asset Specs (`PUT /api/assets/{id}/`)**: Provide full specs (maker, model, year, price, maintenance dates).
+3. **Submit Feedback (`PATCH /api/assets/{id}/`)**: Provide feedback (`CORRECT` or `INCORRECT`).
+4. **Admin Panel (`/api/admin/`)**: Full CRUD access for superusers on users and assets.""",
     "VERSION": "1.0.0",
     "SCHEMA_PATH_PREFIX": r"/api/",
+    "COMPONENT_SPLIT_REQUEST": True,
     "SWAGGER_UI_SETTINGS": {
         "filter": True,
         "displayRequestDuration": True,
+        "docExpansion": "list",
+        "defaultModelsExpandDepth": 3,
     },
 }
+
+
 
 
 ROOT_URLCONF = "assetmanagement.urls"
