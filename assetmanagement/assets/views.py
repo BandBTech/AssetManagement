@@ -10,7 +10,7 @@ from .serializers import (
     AssetCreateSerializer,
     AssetFeedbackSerializer,
     AssetDetailsAddSerializer,
-    AssetRetrieveSerializer,
+    AssetListRetrieveSerializer,
 )
 
 
@@ -18,7 +18,7 @@ from .serializers import (
     get=extend_schema(
         summary="List all assets",
         description="Returns a list of all recorded assets with their metadata.",
-        responses={200: AssetRetrieveSerializer(many=True)},
+        responses={200: AssetListRetrieveSerializer(many=True)},
         tags=["Assets"],
     ),
     post=extend_schema(
@@ -32,15 +32,22 @@ from .serializers import (
         request=AssetCreateSerializer,
         responses={
             201: OpenApiResponse(response=AssetCreateSerializer, description="Newly created asset"),
-            200: OpenApiResponse(response=AssetRetrieveSerializer, description="Existing asset returned"),
+            200: OpenApiResponse(response=AssetListRetrieveSerializer, description="Existing asset returned"),
         },
         tags=["Assets"],
     ),
 )
 class AssetListCreateView(ListCreateAPIView):
     queryset = Asset.objects.all()
-    serializer_class = AssetCreateSerializer
+    # serializer_class = AssetCreateSerializer
     parser_classes = [MultiPartParser, FormParser]
+
+
+    def get_serializer_class(self):
+        if self.request and self.request.method=="GET":
+            return AssetListRetrieveSerializer
+        else:
+            return AssetCreateSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -49,10 +56,12 @@ class AssetListCreateView(ListCreateAPIView):
 
         is_created = getattr(asset, "is_newly_created", True)
         if is_created:
+            # if the system sees this the first time, it will post
             response_serializer = AssetCreateSerializer(asset, context={"request": request})
             status_code = status.HTTP_201_CREATED
         else:
-            response_serializer = AssetRetrieveSerializer(asset, context={"request": request})
+            # if the system has already stored informatino, it will display details
+            response_serializer = AssetListRetrieveSerializer(asset, context={"request": request})
             status_code = status.HTTP_200_OK
 
         return Response(response_serializer.data, status=status_code)
@@ -62,7 +71,7 @@ class AssetListCreateView(ListCreateAPIView):
     get=extend_schema(
         summary="Retrieve Asset Details",
         description="Get full details of a specific asset by ID.",
-        responses={200: AssetRetrieveSerializer},
+        responses={200: AssetListRetrieveSerializer},
         tags=["Assets"],
     ),
     put=extend_schema(
@@ -93,7 +102,7 @@ class AssetRetrieveUpdateView(RetrieveUpdateAPIView):
         elif self.request and self.request.method == "PATCH":
             return AssetFeedbackSerializer
         else:
-            return AssetRetrieveSerializer
+            return AssetListRetrieveSerializer
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop("partial", False)

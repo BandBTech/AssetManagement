@@ -9,7 +9,7 @@ from assets.models import Asset
 from assets.serializers import (
     AssetCreateSerializer,
     AssetDetailsAddSerializer,
-    AssetRetrieveSerializer,
+    AssetListRetrieveSerializer,
 )
 
 User = get_user_model()
@@ -149,7 +149,7 @@ class AssetRetrieveSerializerTestCase(APITestCase):
         )
 
     def test_retrieve_representation(self):
-        serializer = AssetRetrieveSerializer(instance=self.asset)
+        serializer = AssetListRetrieveSerializer(instance=self.asset)
         data = serializer.data
         self.assertEqual(data["id"], self.asset.id)
         self.assertEqual(data["maker"], "LG")
@@ -271,5 +271,192 @@ class AssetAPIEndpointsTestCase(APITestCase):
         url = reverse("asset-detail", kwargs={"pk": 99999})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class AssetCoordinatesValidationEdgeCasesTestCase(APITestCase):
+    def test_out_of_bounds_latitude_fails(self):
+        test_image = generate_test_image()
+        payload = {"coordinates": {"lat": 95.0, "lng": 85.300140}, "image": test_image}
+        serializer = AssetCreateSerializer(data=payload)
+        self.assertFalse(
+            serializer.is_valid(),
+            "AUDIT BUG: Serializer accepted invalid latitude > 90 degree bounds!",
+        )
+
+    def test_out_of_bounds_longitude_fails(self):
+        test_image = generate_test_image()
+        payload = {"coordinates": {"lat": 27.700769, "lng": 190.0}, "image": test_image}
+        serializer = AssetCreateSerializer(data=payload)
+        self.assertFalse(
+            serializer.is_valid(),
+            "AUDIT BUG: Serializer accepted invalid longitude > 180 degree bounds!",
+        )
+
+    def test_nan_latitude_fails(self):
+        test_image = generate_test_image()
+        payload = {"coordinates": {"lat": "NaN", "lng": 85.3}, "image": test_image}
+        serializer = AssetCreateSerializer(data=payload)
+        self.assertFalse(serializer.is_valid())
+
+    def test_infinity_latitude_fails(self):
+        test_image = generate_test_image()
+        payload = {"coordinates": {"lat": "Infinity", "lng": 85.3}, "image": test_image}
+        serializer = AssetCreateSerializer(data=payload)
+        self.assertFalse(serializer.is_valid())
+
+
+class AssetUserOwnershipSecurityTestCase(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="asset_owner", email="owner@example.com", password="password123"
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_uploaded_asset_associates_with_authenticated_user(self):
+        from unittest.mock import patch
+        url = reverse("asset-list-create")
+        test_image = generate_test_image("user_test.jpg")
+        payload = {
+            "coordinates": '{"lat": 27.700769, "lng": 85.300140}',
+            "image": test_image,
+        }
+        with patch("assets.serializers.run_yolo_and_annotate") as mock_yolo:
+            mock_yolo.return_value = ("uploads/predicted/user_test.jpg", {"label": "refrigerator", "confidence": 0.95})
+            response = self.client.post(url, payload, format="multipart")
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+            asset = Asset.objects.get(pk=response.data["id"])
+            self.assertIsNotNone(
+                asset.user,
+                "AUDIT BUG: Uploaded asset user field is null even when created by authenticated user!",
+            )
+            self.assertEqual(asset.user, self.user)
+
+
+class AssetFuzzyGeolocationProximityTestCase(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="geo_user", email="geo@example.com", password="password123"
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_proximity_matching_within_2m_radius(self):
+        from unittest.mock import patch
+        url = reverse("asset-list-create")
+        
+        # Create base asset at lat: 27.700000, lng: 85.300000
+        test_image1 = generate_test_image("geo1.jpg")
+        payload1 = {
+            "coordinates": '{"lat": 27.700000, "lng": 85.300000}',
+            "image": test_image1,
+        }
+        with patch("assets.serializers.run_yolo_and_annotate") as mock_yolo:
+            mock_yolo.return_value = ("uploads/predicted/g1.jpg", {"label": "refrigerator", "confidence": 0.95})
+            res1 = self.client.post(url, payload1, format="multipart")
+            self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
+            base_id = res1.data["id"]
+
+        # Post second asset at lat: 27.700010, lng: 85.300010 (~1.2 meters away) with same label
+        test_image2 = generate_test_image("geo2.jpg")
+        payload2 = {
+            "coordinates": '{"lat": 27.700010, "lng": 85.300010}',
+            "image": test_image2,
+        }
+        with patch("assets.serializers.run_yolo_and_annotate") as mock_yolo:
+            mock_yolo.return_value = ("uploads/predicted/g2.jpg", {"label": "refrigerator", "confidence": 0.95})
+            res2 = self.client.post(url, payload2, format="multipart")
+            
+            # If 2m fuzzy geolocation matching is implemented, this should match existing asset (200 OK)
+            # If only exact JSON dictionary equality is used, this creates a duplicate asset (201 Created).
+            self.assertEqual(
+                res2.status_code,
+                status.HTTP_200_OK,
+                f"AUDIT BUG: Fuzzy geolocation matching failed for point ~1.2m away! Got HTTP {res2.status_code}",
+            )
+            self.assertEqual(res2.data["id"], base_id)
+
+
+class AssetSpecificationPUTOverwriteTestCase(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="put_user", email="put@example.com", password="password123"
+        )
+        self.client.force_authenticate(user=self.user)
+        self.asset = Asset.objects.create(
+            original_image="uploads/originals/test.jpg",
+            label="refrigerator",
+            conf=0.95,
+            coordinates={"lat": 10.0, "lng": 20.0},
+            status="PENDING",
+        )
+
+    def test_put_next_maintenance_due_consistency(self):
+        """
+        Tests whether next_maintenance_due provided in request payload is respected or silently overwritten.
+        """
+        url = reverse("asset-detail", kwargs={"pk": self.asset.pk})
+        payload = {
+            "status": "CORRECT",
+            "maker": "Samsung",
+            "model_no": "sams4345",
+            "year": 2012,
+            "price_jpy": "567.56",
+            "size": "512*512",
+            "maintenance_cycle": 30,
+            "last_maintenance_date": "2026-08-01",
+            "next_maintenance_due": "2099-12-31",  # Custom future due date provided by user
+            "notes": "Custom due date test",
+        }
+        response = self.client.put(url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        self.asset.refresh_from_db()
+        # Expect model save calculation: 2026-08-01 + 30 days = 2026-08-31
+        expected_calculated = "2026-08-31"
+        self.assertEqual(
+            str(self.asset.next_maintenance_due),
+            "2099-12-31",
+            f"AUDIT INCONSISTENCY: Serializer required next_maintenance_due in PUT request but model save() overwritten it to {self.asset.next_maintenance_due}!",
+        )
+
+    def test_negative_price_jpy_fails(self):
+        url = reverse("asset-detail", kwargs={"pk": self.asset.pk})
+        payload = {
+            "status": "CORRECT",
+            "maker": "Samsung",
+            "model_no": "sams4345",
+            "year": 2012,
+            "price_jpy": "-567.56",
+            "size": "512*512",
+            "maintenance_cycle": 30,
+            "last_maintenance_date": "2026-08-01",
+            "next_maintenance_due": "2026-08-31",
+        }
+        response = self.client.put(url, payload, format="json")
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+            "AUDIT BUG: Serializer accepted negative price_jpy!",
+        )
+
+    def test_negative_maintenance_cycle_fails(self):
+        url = reverse("asset-detail", kwargs={"pk": self.asset.pk})
+        payload = {
+            "status": "CORRECT",
+            "maker": "Samsung",
+            "model_no": "sams4345",
+            "year": 2012,
+            "price_jpy": "500.00",
+            "size": "512*512",
+            "maintenance_cycle": -30,
+            "last_maintenance_date": "2026-08-01",
+            "next_maintenance_due": "2026-08-31",
+        }
+        response = self.client.put(url, payload, format="json")
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+            "AUDIT BUG: Serializer accepted negative maintenance_cycle!",
+        )
+
 
 

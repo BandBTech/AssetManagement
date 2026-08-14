@@ -237,4 +237,22 @@ class AdminUserAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(User.objects.filter(pk=self.target_user.pk).exists())
 
+    def test_admin_create_user_short_password_fails(self):
+        self.client.force_authenticate(user=self.superuser)
+        payload = {
+            "username": "short_admin_user",
+            "email": "shortadmin@example.com",
+            "password": "123",  # Less than min_length=8
+        }
+        response = self.client.post(self.list_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_admin_update_user_duplicate_email_fails(self):
+        self.client.force_authenticate(user=self.superuser)
+        detail_url = reverse("admin-user-detail", kwargs={"pk": self.target_user.pk})
+        payload = {"email": "admin@example.com"}  # Duplicate of superuser's email
+        response = self.client.patch(detail_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
 
