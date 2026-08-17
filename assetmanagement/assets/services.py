@@ -108,7 +108,7 @@ def haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> fl
     return R * c
 
 
-def find_or_create_asset_within_radius(coordinates: dict, label_val: str, defaults: dict, radius_meters: float = 1.0):
+def find_or_create_asset_within_radius(coordinates: dict, label_val: str, defaults: dict, radius_meters: float = 2.0):
     """
     Looks for an existing asset with matching label within radius_meters of coordinates.
     Returns (asset, created_boolean).

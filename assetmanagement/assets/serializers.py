@@ -2,7 +2,7 @@ import json
 from rest_framework import serializers
 from django.conf import settings
 from .models import Asset, Status
-from .services import run_yolo_and_annotate
+from .services import run_yolo_and_annotate, find_or_create_asset_within_radius
 from authentication.serializers import UserSerializer
 from drf_spectacular.utils import extend_schema_field
 
@@ -112,16 +112,17 @@ class AssetCreateSerializer(serializers.ModelSerializer):
         conf_val = detected_object.get("confidence") if isinstance(detected_object, dict) else None
 
         if coordinates and label_val:
-            asset, created = Asset.objects.get_or_create(
+            asset, created = find_or_create_asset_within_radius(
                 coordinates=coordinates,
-                label=label_val,
+                label_val=label_val,
                 defaults={
-                    "user":user,
+                    "user": user,
                     "original_image": original_image,
                     "predicted_image": predicted_image,
                     "conf": conf_val,
                     "status": "PENDING",
-                }
+                },
+                radius_meters=2.0,
             )
         else:
             validated_data['predicted_image'] = predicted_image
