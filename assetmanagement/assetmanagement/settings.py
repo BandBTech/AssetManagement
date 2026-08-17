@@ -145,7 +145,7 @@ WSGI_APPLICATION = "assetmanagement.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": getenv("DB_ENGINE", "django.db.backends.postgresql"),
-        "NAME": getenv("DB_NAME", BASE_DIR / "db.sqlite3"),
+        "NAME": getenv("DB_NAME", str(BASE_DIR / "db.sqlite3")),
         "USER": getenv("DB_USER"),
         "PASSWORD": getenv("DB_PASS"),
         "HOST": getenv("DB_HOST"),

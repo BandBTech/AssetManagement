@@ -85,3 +85,64 @@ def run_yolo_and_annotate(image_file):
     content_file = ContentFile(buffer.tobytes(), name=f"{uuid.uuid4()}.jpg")
 
     return content_file, detected
+
+
+import math
+from .models import Asset
+
+
+def haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> float:
+    """
+    Returns distance in meters between two lat/lng coordinates.
+    """
+    R = 6371000.0  # Earth radius in meters
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lng2 - lng1)
+
+    a = (math.sin(delta_phi / 2.0) ** 2 +
+         math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2)
+    c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+
+    return R * c
+
+
+def find_or_create_asset_within_radius(coordinates: dict, label_val: str, defaults: dict, radius_meters: float = 1.0):
+    """
+    Looks for an existing asset with matching label within radius_meters of coordinates.
+    Returns (asset, created_boolean).
+    """
+    try:
+        target_lat = float(coordinates.get("lat"))
+        target_lng = float(coordinates.get("lng"))
+    except (TypeError, ValueError):
+        target_lat, target_lng = None, None
+
+    if target_lat is not None and target_lng is not None and label_val:
+        candidates = Asset.objects.filter(label=label_val)
+        closest_asset = None
+        min_distance = float("inf")
+
+        for candidate in candidates:
+            cand_coords = candidate.coordinates or {}
+            try:
+                cand_lat = float(cand_coords.get("lat"))
+                cand_lng = float(cand_coords.get("lng"))
+                dist = haversine_distance(target_lat, target_lng, cand_lat, cand_lng)
+                if dist <= radius_meters and dist < min_distance:
+                    min_distance = dist
+                    closest_asset = candidate
+            except (TypeError, ValueError):
+                continue
+
+        if closest_asset:
+            return closest_asset, False
+
+    new_asset = Asset.objects.create(
+        coordinates=coordinates,
+        label=label_val,
+        **defaults
+    )
+    return new_asset, True
+

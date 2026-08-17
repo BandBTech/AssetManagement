@@ -459,4 +459,50 @@ class AssetSpecificationPUTOverwriteTestCase(APITestCase):
         )
 
 
+class ProximityServiceTest(APITestCase):
+    def test_haversine_distance_calculation(self):
+        from assets.services import haversine_distance
+        # 27.700769, 85.300140 to 27.700769, 85.300149 is ~0.9 meters
+        dist = haversine_distance(27.700769, 85.300140, 27.700769, 85.300149)
+        self.assertLess(dist, 1.0)
+        self.assertGreater(dist, 0.5)
+
+    def test_find_or_create_asset_within_radius_match(self):
+        from assets.services import find_or_create_asset_within_radius
+        existing = Asset.objects.create(
+            coordinates={"lat": 27.700769, "lng": 85.300140},
+            label="transformer",
+            status="PENDING"
+        )
+        # Nearby point (approx 0.8m away)
+        nearby_coords = {"lat": 27.700769, "lng": 85.300148}
+        asset, created = find_or_create_asset_within_radius(
+            coordinates=nearby_coords,
+            label_val="transformer",
+            defaults={"status": "PENDING"},
+            radius_meters=1.0
+        )
+        self.assertFalse(created)
+        self.assertEqual(asset.id, existing.id)
+
+    def test_find_or_create_asset_within_radius_no_match_farther(self):
+        from assets.services import find_or_create_asset_within_radius
+        existing = Asset.objects.create(
+            coordinates={"lat": 27.700769, "lng": 85.300140},
+            label="transformer",
+            status="PENDING"
+        )
+        # Point far away (> 100 meters)
+        far_coords = {"lat": 27.701500, "lng": 85.301500}
+        asset, created = find_or_create_asset_within_radius(
+            coordinates=far_coords,
+            label_val="transformer",
+            defaults={"status": "PENDING"},
+            radius_meters=1.0
+        )
+        self.assertTrue(created)
+        self.assertNotEqual(asset.id, existing.id)
+
+
+
 
