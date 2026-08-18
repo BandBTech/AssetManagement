@@ -42,6 +42,9 @@ class AssetListCreateView(ListCreateAPIView):
     # serializer_class = AssetCreateSerializer
     parser_classes = [MultiPartParser, FormParser]
 
+    def get_queryset(self):
+        user = self.request.user
+        return Asset.objects.filter(user=user)
 
     def get_serializer_class(self):
         if self.request and self.request.method=="GET":
