@@ -4,6 +4,7 @@ env
 assetmanagement/media
 assetmanagement/model
 docs
+docs/
 
 assetmanagement/staticfiles
 
