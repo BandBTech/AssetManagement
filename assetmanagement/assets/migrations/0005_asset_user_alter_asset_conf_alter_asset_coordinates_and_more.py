@@ -8,30 +8,36 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('assets', '0004_rename_detected_objects_asset_label_and_more'),
+        ("assets", "0004_rename_detected_objects_asset_label_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='asset',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assets', to=settings.AUTH_USER_MODEL),
+            model_name="asset",
+            name="user",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="assets",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='asset',
-            name='conf',
+            model_name="asset",
+            name="conf",
             field=models.JSONField(blank=True, null=True),
         ),
         migrations.AlterField(
-            model_name='asset',
-            name='coordinates',
+            model_name="asset",
+            name="coordinates",
             field=models.JSONField(default=1),
             preserve_default=False,
         ),
         migrations.AlterField(
-            model_name='asset',
-            name='label',
+            model_name="asset",
+            name="label",
             field=models.JSONField(blank=True, null=True),
         ),
     ]

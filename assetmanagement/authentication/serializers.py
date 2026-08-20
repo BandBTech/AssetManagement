@@ -23,18 +23,10 @@ from .models import User
     ]
 )
 class UserRegisterSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(
-        help_text="Required username", required=True
-    )
-    email = serializers.EmailField(
-        help_text="User email address", required=True
-    )
-    password = serializers.CharField(
-        write_only=True, min_length=8, required=True
-    )
-    confirm_password = serializers.CharField(
-        write_only=True, required=True
-    )
+    username = serializers.CharField(help_text="Required username", required=True)
+    email = serializers.EmailField(help_text="User email address", required=True)
+    password = serializers.CharField(write_only=True, min_length=8, required=True)
+    confirm_password = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
@@ -51,16 +43,14 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     # validating the user before creating the user.
     def validate(self, attrs):
         if attrs["password"] != attrs["confirm_password"]:
-            raise serializers.ValidationError(
-                {"message": "Passwords do not match."}
-            )
+            raise serializers.ValidationError({"message": "Passwords do not match."})
         return attrs
 
     def create(self, validated_data):
         validated_data.pop("confirm_password")
         return User.objects.create_user(**validated_data)
 
-  
+
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -84,8 +74,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     ]
 )
 class UserLoginSerializer(serializers.Serializer):
-    identifier = serializers.CharField( required=True )
-    password = serializers.CharField( required=True )
+    identifier = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
 
     def validate(self, attrs):
         identifier = attrs.get("identifier")

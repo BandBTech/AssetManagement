@@ -11,6 +11,7 @@ yolo_pipe_model = None
 def _get_models():
     global yolo_main_model, yolo_pipe_model
     from ultralytics import YOLO
+
     if yolo_main_model is None:
         yolo_main_model = YOLO("model/best.pt")
     if yolo_pipe_model is None:
@@ -34,10 +35,10 @@ def run_yolo_and_annotate(image_file):
     # Find the class ID for 'pipe' in the first model to exclude it
     pipe_class_id = None
     for k, v in yolo_model.names.items():
-        if v.lower() == 'pipe':
+        if v.lower() == "pipe":
             pipe_class_id = k
             break
-            
+
     classes_to_detect = None
     if pipe_class_id is not None:
         classes_to_detect = [k for k in yolo_model.names.keys() if k != pipe_class_id]
@@ -45,7 +46,7 @@ def run_yolo_and_annotate(image_file):
     # Run inference, excluding 'pipe' from the first model
     results = yolo_model(image, conf=0.6, classes=classes_to_detect)
     results_pipe = pipe_model(image, conf=0.6)
-    
+
     # Plot both results on the same image
     annotated = results[0].plot()
     try:
@@ -54,7 +55,7 @@ def run_yolo_and_annotate(image_file):
         try:
             annotated = results_pipe[0].plot(img=annotated)
         except TypeError:
-            pass # Fallback if neither works, we just return the first plot
+            pass  # Fallback if neither works, we just return the first plot
 
     detected = []
     # Collect detections from first model
@@ -65,7 +66,7 @@ def run_yolo_and_annotate(image_file):
                 "confidence": round(float(box.conf), 2),
             }
         )
-        
+
     # Collect detections from pipe model
     for box in results_pipe[0].boxes:
         detected.append(
@@ -101,14 +102,18 @@ def haversine_distance(lat1: float, lng1: float, lat2: float, lng2: float) -> fl
     delta_phi = math.radians(lat2 - lat1)
     delta_lambda = math.radians(lng2 - lng1)
 
-    a = (math.sin(delta_phi / 2.0) ** 2 +
-         math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2)
+    a = (
+        math.sin(delta_phi / 2.0) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2.0) ** 2
+    )
     c = 2.0 * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
 
     return R * c
 
 
-def find_or_create_asset_within_radius(coordinates: dict, label_val: str, defaults: dict, radius_meters: float = 2.0):
+def find_or_create_asset_within_radius(
+    coordinates: dict, label_val: str, defaults: dict, radius_meters: float = 2.0
+):
     """
     Looks for an existing asset with matching label within radius_meters of coordinates.
     Returns (asset, created_boolean).
@@ -140,9 +145,6 @@ def find_or_create_asset_within_radius(coordinates: dict, label_val: str, defaul
             return closest_asset, False
 
     new_asset = Asset.objects.create(
-        coordinates=coordinates,
-        label=label_val,
-        **defaults
+        coordinates=coordinates, label=label_val, **defaults
     )
     return new_asset, True
-

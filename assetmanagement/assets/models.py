@@ -9,10 +9,11 @@ class Status(models.TextChoices):
     CORRECT = "CORRECT", _("Correct")
     INCORRECT = "INCORRECT", _("Incorrect")
 
-    
 
 class Asset(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="assets")
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="assets"
+    )
     status = models.CharField(
         max_length=10, choices=Status.choices, default=Status.PENDING
     )
@@ -23,25 +24,32 @@ class Asset(models.Model):
     label = models.JSONField(blank=True, null=True)
     conf = models.JSONField(blank=True, null=True)
     maker = models.CharField(max_length=255, blank=True, null=True)
-    model_no = models.CharField(max_length=255, blank=True, null=True) 
+    model_no = models.CharField(max_length=255, blank=True, null=True)
     year = models.IntegerField(blank=True, null=True)
-    price_jpy = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
+    price_jpy = models.DecimalField(
+        max_digits=12, decimal_places=2, blank=True, null=True
+    )
     size = models.CharField(max_length=255, blank=True, null=True)
-    maintenance_cycle = models.IntegerField(blank=True, null=True, help_text="Maintenance cycle in days")
+    maintenance_cycle = models.IntegerField(
+        blank=True, null=True, help_text="Maintenance cycle in months"
+    )
     last_maintenance_date = models.DateField(blank=True, null=True)
     next_maintenance_due = models.DateField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     coordinates = models.JSONField()
-    
+
     class Meta:
-        ordering = ["-created_at"]  # newest first always
+        ordering = ["-updated_at"]
 
     def save(self, *args, **kwargs):
-        if self.last_maintenance_date and self.maintenance_cycle:
-            self.next_maintenance_due = self.last_maintenance_date + timedelta(days=self.maintenance_cycle)
+        if self.last_maintenance_date and self.maintenance_cycle and not self.next_maintenance_due:
+            self.next_maintenance_due = self.last_maintenance_date + timedelta(
+                days=self.maintenance_cycle
+            )
         super().save(*args, **kwargs)
 
-    def __str__(self):  
+    def __str__(self):
         return f"{self.label} - {self.status}"

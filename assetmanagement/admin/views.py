@@ -9,7 +9,11 @@ from django.contrib.auth import get_user_model
 from assets.models import Asset
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from base.permissions import IsSuperUser
-from .serializers import AdminAssetSerializer, AdminAssetStatsSerializer, AdminUserSerializer
+from .serializers import (
+    AdminAssetSerializer,
+    AdminAssetStatsSerializer,
+    AdminUserSerializer,
+)
 
 User = get_user_model()
 
@@ -19,7 +23,9 @@ User = get_user_model()
     retrieve=extend_schema(summary="Admin: Get User Details", tags=["Admin Users"]),
     create=extend_schema(summary="Admin: Create User", tags=["Admin Users"]),
     update=extend_schema(summary="Admin: Update User (Full)", tags=["Admin Users"]),
-    partial_update=extend_schema(summary="Admin: Update User (Partial)", tags=["Admin Users"]),
+    partial_update=extend_schema(
+        summary="Admin: Update User (Partial)", tags=["Admin Users"]
+    ),
     destroy=extend_schema(summary="Admin: Delete User", tags=["Admin Users"]),
 )
 class AdminUserViewSet(viewsets.ModelViewSet):
@@ -38,7 +44,9 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     retrieve=extend_schema(summary="Admin: Get Asset Details", tags=["Admin Assets"]),
     create=extend_schema(summary="Admin: Create Asset", tags=["Admin Assets"]),
     update=extend_schema(summary="Admin: Update Asset (Full)", tags=["Admin Assets"]),
-    partial_update=extend_schema(summary="Admin: Update Asset (Partial)", tags=["Admin Assets"]),
+    partial_update=extend_schema(
+        summary="Admin: Update Asset (Partial)", tags=["Admin Assets"]
+    ),
     destroy=extend_schema(summary="Admin: Delete Asset", tags=["Admin Assets"]),
 )
 class AdminAssetViewSet(viewsets.ModelViewSet):
@@ -85,4 +93,3 @@ class AdminAssetViewSet(viewsets.ModelViewSet):
 
         serializer = AdminAssetStatsSerializer(stats_data)
         return Response(serializer.data, status=status.HTTP_200_OK)
-

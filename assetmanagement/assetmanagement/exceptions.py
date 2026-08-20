@@ -1,6 +1,7 @@
 from rest_framework.views import exception_handler
 from rest_framework.response import Response
 
+
 def custom_exception_handler(exc, context):
     response = exception_handler(exc, context)
 
@@ -8,7 +9,11 @@ def custom_exception_handler(exc, context):
         messages = []
         if isinstance(response.data, dict):
             for field, err in response.data.items():
-                prefix = f"{field}: " if field not in ("detail", "non_field_errors", "error") else ""
+                prefix = (
+                    f"{field}: "
+                    if field not in ("detail", "non_field_errors", "error")
+                    else ""
+                )
                 if isinstance(err, list):
                     for item in err:
                         if isinstance(item, dict) and "message" in item:

@@ -63,5 +63,3 @@ class UserLoginView(APIView):
 )
 class CustomTokenRefreshView(TokenRefreshView):
     pass
-
-

@@ -41,7 +41,9 @@ class UserRegisterSerializerTestCase(APITestCase):
 
     def test_duplicate_email_fails(self):
         User.objects.create_user(
-            username="existing_user1", email="duplicate@example.com", password="Password123"
+            username="existing_user1",
+            email="duplicate@example.com",
+            password="Password123",
         )
         payload = {
             "username": "another_user",
@@ -60,11 +62,15 @@ class UserRegisterSerializerTestCase(APITestCase):
                 f"AUDIT BUG: Registration with duplicate email returned status {response.status_code} instead of 400!",
             )
         except Exception as e:
-            self.fail(f"AUDIT BUG: Duplicate email registration crashed with unhandled database exception: {e}")
+            self.fail(
+                f"AUDIT BUG: Duplicate email registration crashed with unhandled database exception: {e}"
+            )
 
     def test_duplicate_username_fails(self):
         User.objects.create_user(
-            username="existing_user2", email="existing2@example.com", password="Password123"
+            username="existing_user2",
+            email="existing2@example.com",
+            password="Password123",
         )
         payload = {
             "username": "existing_user2",
@@ -83,8 +89,9 @@ class UserRegisterSerializerTestCase(APITestCase):
                 f"AUDIT BUG: Registration with duplicate username returned status {response.status_code} instead of 400!",
             )
         except Exception as e:
-            self.fail(f"AUDIT BUG: Duplicate username registration crashed with unhandled database exception: {e}")
-
+            self.fail(
+                f"AUDIT BUG: Duplicate username registration crashed with unhandled database exception: {e}"
+            )
 
     def test_short_password_fails(self):
         payload = {
@@ -215,4 +222,3 @@ class TokenRefreshTestCase(APITestCase):
         payload = {"refresh": "invalid_refresh_token_string"}
         response = self.client.post(self.refresh_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-

@@ -6,71 +6,73 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('assets', '0003_rename_pruchase_price_asset_purchase_price'),
+        ("assets", "0003_rename_pruchase_price_asset_purchase_price"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='asset',
-            old_name='detected_objects',
-            new_name='label',
+            model_name="asset",
+            old_name="detected_objects",
+            new_name="label",
         ),
         migrations.RenameField(
-            model_name='asset',
-            old_name='brand',
-            new_name='maker',
+            model_name="asset",
+            old_name="brand",
+            new_name="maker",
         ),
         migrations.RenameField(
-            model_name='asset',
-            old_name='asset_model',
-            new_name='model_no',
+            model_name="asset",
+            old_name="asset_model",
+            new_name="model_no",
         ),
         migrations.RenameField(
-            model_name='asset',
-            old_name='purchase_price',
-            new_name='price_jpy',
+            model_name="asset",
+            old_name="purchase_price",
+            new_name="price_jpy",
         ),
         migrations.RemoveField(
-            model_name='asset',
-            name='depreciation_rate',
+            model_name="asset",
+            name="depreciation_rate",
         ),
         migrations.RemoveField(
-            model_name='asset',
-            name='maintenance_period',
+            model_name="asset",
+            name="maintenance_period",
         ),
         migrations.AddField(
-            model_name='asset',
-            name='conf',
+            model_name="asset",
+            name="conf",
             field=models.JSONField(blank=True, default=list, null=True),
         ),
         migrations.AddField(
-            model_name='asset',
-            name='last_maintenance_date',
+            model_name="asset",
+            name="last_maintenance_date",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='asset',
-            name='maintenance_cycle',
-            field=models.IntegerField(blank=True, help_text='Maintenance cycle in days', null=True),
+            model_name="asset",
+            name="maintenance_cycle",
+            field=models.IntegerField(
+                blank=True, help_text="Maintenance cycle in days", null=True
+            ),
         ),
         migrations.AddField(
-            model_name='asset',
-            name='next_maintenance_due',
+            model_name="asset",
+            name="next_maintenance_due",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='asset',
-            name='notes',
+            model_name="asset",
+            name="notes",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='asset',
-            name='size',
+            model_name="asset",
+            name="size",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='asset',
-            name='year',
+            model_name="asset",
+            name="year",
             field=models.IntegerField(blank=True, null=True),
         ),
     ]

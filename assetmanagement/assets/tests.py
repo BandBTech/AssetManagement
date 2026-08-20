@@ -26,7 +26,10 @@ def generate_test_image(filename="test.jpg"):
 class AssetCreateSerializerTestCase(APITestCase):
     def test_valid_creation(self):
         test_image = generate_test_image()
-        payload = {"coordinates": {"lat": 27.700769, "lng": 85.300140}, "image": test_image}
+        payload = {
+            "coordinates": {"lat": 27.700769, "lng": 85.300140},
+            "image": test_image,
+        }
         serializer = AssetCreateSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
         asset = serializer.save()
@@ -74,11 +77,19 @@ class AssetCreateSerializerTestCase(APITestCase):
         }
         serializer = AssetCreateSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
-        self.assertEqual(serializer.validated_data["coordinates"], {"lat": 27.700769, "lng": 85.300140})
+        self.assertEqual(
+            serializer.validated_data["coordinates"],
+            {"lat": 27.700769, "lng": 85.300140},
+        )
 
     def test_corrupt_image_bytes_fails(self):
-        corrupt_file = SimpleUploadedFile("corrupt.jpg", b"INVALID_BYTES", content_type="image/jpeg")
-        payload = {"coordinates": {"lat": 27.700769, "lng": 85.300140}, "image": corrupt_file}
+        corrupt_file = SimpleUploadedFile(
+            "corrupt.jpg", b"INVALID_BYTES", content_type="image/jpeg"
+        )
+        payload = {
+            "coordinates": {"lat": 27.700769, "lng": 85.300140},
+            "image": corrupt_file,
+        }
         serializer = AssetCreateSerializer(data=payload)
         self.assertFalse(serializer.is_valid())
         self.assertIn("image", serializer.errors)
@@ -131,6 +142,7 @@ class AssetDetailsAddSerializerTestCase(APITestCase):
 class AssetRetrieveSerializerTestCase(APITestCase):
     def setUp(self):
         from datetime import date
+
         self.asset = Asset.objects.create(
             original_image="uploads/originals/test.jpg",
             predicted_image="uploads/predicted/test_pred.jpg",
@@ -194,6 +206,7 @@ class AssetAPIEndpointsTestCase(APITestCase):
 
     def test_create_or_retrieve_existing_asset_endpoint(self):
         from unittest.mock import patch
+
         url = reverse("asset-list-create")
         test_image1 = generate_test_image("post_dup1.jpg")
         payload = {
@@ -201,8 +214,11 @@ class AssetAPIEndpointsTestCase(APITestCase):
             "image": test_image1,
         }
         with patch("assets.serializers.run_yolo_and_annotate") as mock_yolo:
-            mock_yolo.return_value = ("uploads/predicted/test.jpg", {"label": "refrigerator", "confidence": 0.95})
-            
+            mock_yolo.return_value = (
+                "uploads/predicted/test.jpg",
+                {"label": "refrigerator", "confidence": 0.95},
+            )
+
             # First request -> 201 Created (AssetCreateSerializer - no maker/model_no fields)
             res1 = self.client.post(url, payload, format="multipart")
             self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
@@ -220,7 +236,6 @@ class AssetAPIEndpointsTestCase(APITestCase):
             self.assertFalse(res2.data["is_newly_created"])
             self.assertEqual(res2.data["id"], res1.data["id"])
             self.assertIn("maker", res2.data)
-
 
     def test_retrieve_asset_endpoint_get(self):
         url = reverse("asset-detail", kwargs={"pk": self.asset.pk})
@@ -314,6 +329,7 @@ class AssetUserOwnershipSecurityTestCase(APITestCase):
 
     def test_uploaded_asset_associates_with_authenticated_user(self):
         from unittest.mock import patch
+
         url = reverse("asset-list-create")
         test_image = generate_test_image("user_test.jpg")
         payload = {
@@ -321,7 +337,10 @@ class AssetUserOwnershipSecurityTestCase(APITestCase):
             "image": test_image,
         }
         with patch("assets.serializers.run_yolo_and_annotate") as mock_yolo:
-            mock_yolo.return_value = ("uploads/predicted/user_test.jpg", {"label": "refrigerator", "confidence": 0.95})
+            mock_yolo.return_value = (
+                "uploads/predicted/user_test.jpg",
+                {"label": "refrigerator", "confidence": 0.95},
+            )
             response = self.client.post(url, payload, format="multipart")
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
             asset = Asset.objects.get(pk=response.data["id"])
@@ -341,8 +360,9 @@ class AssetFuzzyGeolocationProximityTestCase(APITestCase):
 
     def test_proximity_matching_within_2m_radius(self):
         from unittest.mock import patch
+
         url = reverse("asset-list-create")
-        
+
         # Create base asset at lat: 27.700000, lng: 85.300000
         test_image1 = generate_test_image("geo1.jpg")
         payload1 = {
@@ -350,7 +370,10 @@ class AssetFuzzyGeolocationProximityTestCase(APITestCase):
             "image": test_image1,
         }
         with patch("assets.serializers.run_yolo_and_annotate") as mock_yolo:
-            mock_yolo.return_value = ("uploads/predicted/g1.jpg", {"label": "refrigerator", "confidence": 0.95})
+            mock_yolo.return_value = (
+                "uploads/predicted/g1.jpg",
+                {"label": "refrigerator", "confidence": 0.95},
+            )
             res1 = self.client.post(url, payload1, format="multipart")
             self.assertEqual(res1.status_code, status.HTTP_201_CREATED)
             base_id = res1.data["id"]
@@ -362,9 +385,12 @@ class AssetFuzzyGeolocationProximityTestCase(APITestCase):
             "image": test_image2,
         }
         with patch("assets.serializers.run_yolo_and_annotate") as mock_yolo:
-            mock_yolo.return_value = ("uploads/predicted/g2.jpg", {"label": "refrigerator", "confidence": 0.95})
+            mock_yolo.return_value = (
+                "uploads/predicted/g2.jpg",
+                {"label": "refrigerator", "confidence": 0.95},
+            )
             res2 = self.client.post(url, payload2, format="multipart")
-            
+
             # If 2m fuzzy geolocation matching is implemented, this should match existing asset (200 OK)
             # If only exact JSON dictionary equality is used, this creates a duplicate asset (201 Created).
             self.assertEqual(
@@ -408,7 +434,7 @@ class AssetSpecificationPUTOverwriteTestCase(APITestCase):
         }
         response = self.client.put(url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         self.asset.refresh_from_db()
         # Expect model save calculation: 2026-08-01 + 30 days = 2026-08-31
         expected_calculated = "2026-08-31"
@@ -462,6 +488,7 @@ class AssetSpecificationPUTOverwriteTestCase(APITestCase):
 class ProximityServiceTest(APITestCase):
     def test_haversine_distance_calculation(self):
         from assets.services import haversine_distance
+
         # 27.700769, 85.300140 to 27.700769, 85.300149 is ~0.9 meters
         dist = haversine_distance(27.700769, 85.300140, 27.700769, 85.300149)
         self.assertLess(dist, 1.0)
@@ -469,10 +496,11 @@ class ProximityServiceTest(APITestCase):
 
     def test_find_or_create_asset_within_radius_match(self):
         from assets.services import find_or_create_asset_within_radius
+
         existing = Asset.objects.create(
             coordinates={"lat": 27.700769, "lng": 85.300140},
             label="transformer",
-            status="PENDING"
+            status="PENDING",
         )
         # Nearby point (approx 0.8m away)
         nearby_coords = {"lat": 27.700769, "lng": 85.300148}
@@ -480,17 +508,18 @@ class ProximityServiceTest(APITestCase):
             coordinates=nearby_coords,
             label_val="transformer",
             defaults={"status": "PENDING"},
-            radius_meters=1.0
+            radius_meters=1.0,
         )
         self.assertFalse(created)
         self.assertEqual(asset.id, existing.id)
 
     def test_find_or_create_asset_within_radius_no_match_farther(self):
         from assets.services import find_or_create_asset_within_radius
+
         existing = Asset.objects.create(
             coordinates={"lat": 27.700769, "lng": 85.300140},
             label="transformer",
-            status="PENDING"
+            status="PENDING",
         )
         # Point far away (> 100 meters)
         far_coords = {"lat": 27.701500, "lng": 85.301500}
@@ -498,11 +527,7 @@ class ProximityServiceTest(APITestCase):
             coordinates=far_coords,
             label_val="transformer",
             defaults={"status": "PENDING"},
-            radius_meters=1.0
+            radius_meters=1.0,
         )
         self.assertTrue(created)
         self.assertNotEqual(asset.id, existing.id)
-
-
-
-

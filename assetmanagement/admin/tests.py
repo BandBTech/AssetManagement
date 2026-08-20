@@ -34,6 +34,7 @@ class IsSuperUserPermissionTestCase(TestCase):
 
     def test_anonymous_user_denied_permission(self):
         from django.contrib.auth.models import AnonymousUser
+
         request = self.factory.get("/")
         request.user = AnonymousUser()
         self.assertFalse(self.permission.has_permission(request, None))
@@ -165,7 +166,11 @@ class AdminUserAPITestCase(APITestCase):
             username="normie", email="normie@example.com", password="password123"
         )
         self.target_user = User.objects.create_user(
-            username="target", email="target@example.com", password="password123", first_name="Target", last_name="User"
+            username="target",
+            email="target@example.com",
+            password="password123",
+            first_name="Target",
+            last_name="User",
         )
         self.list_url = reverse("admin-user-list")
 
@@ -182,7 +187,11 @@ class AdminUserAPITestCase(APITestCase):
         self.client.force_authenticate(user=self.superuser)
         response = self.client.get(self.list_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        results = response.data.get("results", response.data) if isinstance(response.data, dict) else response.data
+        results = (
+            response.data.get("results", response.data)
+            if isinstance(response.data, dict)
+            else response.data
+        )
         self.assertEqual(len(results), 3)
 
     def test_superuser_can_create_user(self):
@@ -253,6 +262,3 @@ class AdminUserAPITestCase(APITestCase):
         payload = {"email": "admin@example.com"}  # Duplicate of superuser's email
         response = self.client.patch(detail_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
-

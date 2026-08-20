@@ -24,15 +24,20 @@ from .serializers import (
     post=extend_schema(
         summary="Create / Detect Asset",
         description=(
-            "Upload an image (`image`) along with geolocation JSON (`coordinates`: `{\"lat\": 27.7, \"lng\": 85.3}`).\n\n"
+            'Upload an image (`image`) along with geolocation JSON (`coordinates`: `{"lat": 27.7, "lng": 85.3}`).\n\n'
             "Runs YOLO model object detection on upload.\n"
             "* **201 Created**: Returns newly created asset (`is_newly_created: true`).\n"
             "* **200 OK**: If an asset with identical coordinates and label already exists, returns the existing asset (`is_newly_created: false`)."
         ),
         request=AssetCreateSerializer,
         responses={
-            201: OpenApiResponse(response=AssetCreateSerializer, description="Newly created asset"),
-            200: OpenApiResponse(response=AssetListRetrieveSerializer, description="Existing asset returned"),
+            201: OpenApiResponse(
+                response=AssetCreateSerializer, description="Newly created asset"
+            ),
+            200: OpenApiResponse(
+                response=AssetListRetrieveSerializer,
+                description="Existing asset returned",
+            ),
         },
         tags=["Assets"],
     ),
@@ -47,7 +52,7 @@ class AssetListCreateView(ListCreateAPIView):
         return Asset.objects.filter(user=user)
 
     def get_serializer_class(self):
-        if self.request and self.request.method=="GET":
+        if self.request and self.request.method == "GET":
             return AssetListRetrieveSerializer
         else:
             return AssetCreateSerializer
@@ -60,11 +65,15 @@ class AssetListCreateView(ListCreateAPIView):
         is_created = getattr(asset, "is_newly_created", True)
         if is_created:
             # if the system sees this the first time, it will post
-            response_serializer = AssetCreateSerializer(asset, context={"request": request})
+            response_serializer = AssetCreateSerializer(
+                asset, context={"request": request}
+            )
             status_code = status.HTTP_201_CREATED
         else:
             # if the system has already stored informatino, it will display details
-            response_serializer = AssetListRetrieveSerializer(asset, context={"request": request})
+            response_serializer = AssetListRetrieveSerializer(
+                asset, context={"request": request}
+            )
             status_code = status.HTTP_200_OK
 
         return Response(response_serializer.data, status=status_code)
